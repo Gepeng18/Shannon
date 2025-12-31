@@ -24,6 +24,18 @@ Shannon的Docker Compose架构不仅解决了这些问题，更开创了AI系统
 
 Shannon使用Rust、Go、Python三种语言，每种都有独特的构建和运行时需求：
 
+**这块代码展示了什么？**
+
+这段代码展示了容器化设计的三大挑战与解决方案的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
+**这块代码展示了什么？**
+
+这段代码展示了容器化设计的三大挑战与解决方案的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
 ```dockerfile
 # Rust服务：编译时优化，运行时精简
 FROM rust:1.75-slim as rust-builder
@@ -84,7 +96,13 @@ Shannon的网络设计实现了这些目标。
 
 Shannon选择了**Docker Compose作为起点，Kubernetes作为目标**的设计策略：
 
-```yaml
+`**这块代码展示了什么？**
+
+这段代码展示了容器化设计的三大挑战与解决方案的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
+``yaml
 # docker-compose.yml - 开发和单机部署
 version: '3.8'
 services:
@@ -148,52 +166,55 @@ volumes:
 services:
   # ========== 基础设施层：数据存储和服务 ==========
   postgres:
-    # 向量数据库：使用pgvector扩展支持AI向量存储
+    # PostgreSQL向量数据库：使用pgvector扩展支持AI向量存储和相似度搜索
+    # pgvector是专门为AI应用优化的PostgreSQL扩展，支持高维向量索引和查询
     image: pgvector/pgvector:pg16
     container_name: shannon-postgres
-    restart: unless-stopped
+    restart: unless-stopped  # 容器异常退出时自动重启，除非手动停止
     environment:
       POSTGRES_USER: shannon
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-shannon}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-shannon}  # 支持环境变量配置密码
       POSTGRES_DB: shannon
-      # 连接池配置
-      POSTGRES_MAX_CONNECTIONS: 100
-      POSTGRES_SHARED_BUFFERS: 256MB
+      # 连接池和性能优化配置
+      POSTGRES_MAX_CONNECTIONS: 100     # 最大并发连接数，避免连接耗尽
+      POSTGRES_SHARED_BUFFERS: 256MB    # 共享内存缓冲区，影响查询性能
     volumes:
-      # 数据持久化
+      # 数据持久化：将PostgreSQL数据目录映射到宿主机的命名卷
       - postgres_data:/var/lib/postgresql/data
-      # 数据库迁移脚本自动执行
+      # 数据库迁移脚本：容器启动时自动执行，初始化表结构和索引
       - ../../migrations/postgres:/docker-entrypoint-initdb.d:ro
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "${POSTGRES_PORT:-5432}:5432"  # 支持端口映射配置，默认5432
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U shannon -d shannon"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
+      test: ["CMD-SHELL", "pg_isready -U shannon -d shannon"]  # 健康检查命令
+      interval: 10s      # 检查间隔
+      timeout: 5s        # 检查超时
+      retries: 5         # 失败重试次数
+      start_period: 30s  # 启动后等待时间，避免启动过程中的误报
     networks:
-      - shannon-net
-    # 资源限制
+      - shannon-net      # 加入Shannon内部网络，实现服务间通信
+    # 资源限制和预留，确保容器不会过度消耗宿主机资源
     deploy:
       resources:
-        limits:
+        limits:           # 硬限制，超过则容器被终止
           memory: 1G
           cpus: '0.5'
-        reservations:
+        reservations:     # 软预留，确保容器获得的最小资源
           memory: 512M
           cpus: '0.25'
 
   redis:
-    # 高性能缓存：使用Redis作为会话存储和缓存层
+    # 高性能缓存和会话存储：Redis作为Shannon的核心缓存层，支持多场景使用
+    # 用途：用户会话管理、API响应缓存、临时数据存储、分布式锁
+    # 为什么选择Redis：高性能、丰富的数据结构、持久化支持、集群能力
     image: redis:7-alpine
     container_name: shannon-redis
     restart: unless-stopped
     command: >
       redis-server
-      --appendonly yes           # 启用AOF持久化
-      --appendfsync everysec     # 每秒同步一次
-      --maxmemory 256mb          # 内存限制
+      --appendonly yes           # 启用AOF持久化，确保数据安全性
+      --appendfsync everysec     # 每秒同步一次AOF文件，平衡性能和数据安全
+      --maxmemory 256mb          # 内存限制，防止缓存无限制增长
       --maxmemory-policy allkeys-lru  # LRU淘汰策略
       --tcp-keepalive 60         # TCP保活
     ports:
@@ -249,24 +270,30 @@ services:
           cpus: '0.5'
 
   temporal:
-    # 工作流引擎：分布式工作流编排和执行
+    # 分布式工作流引擎：Temporal作为Shannon的核心编排引擎，管理复杂AI任务的执行
+    # 作用：工作流定义、活动调度、状态管理、故障恢复、超时处理
+    # 为什么选择Temporal：成熟的开源方案，支持数万个并发工作流，强一致性和可观测性
     image: temporalio/auto-setup:1.22.5
     container_name: shannon-temporal
     restart: unless-stopped
     environment:
-      # 数据库连接
-      DB: postgresql
-      DB_PORT: 5432
-      POSTGRES_USER: shannon
-      POSTGRES_PWD: ${POSTGRES_PASSWORD:-shannon}
-      POSTGRES_SEEDS: postgres
-      # Temporal配置
-      DYNAMIC_CONFIG_FILE_PATH: /etc/temporal/config/dynamicconfig.yaml
-      # 服务发现
-      SERVICES_FRONTEND_GRPC_PORT: 7233
-      SERVICES_MATCHER_GRPC_PORT: 7234
-      SERVICES_WORKER_GRPC_PORT: 7235
-      SERVICES_HISTORY_GRPC_PORT: 7236
+      # ========== 数据库后端配置 ==========
+      # Temporal使用PostgreSQL存储工作流历史、状态和元数据
+      DB: postgresql                    # 数据库类型
+      DB_PORT: 5432                     # PostgreSQL端口
+      POSTGRES_USER: shannon            # 数据库用户名
+      POSTGRES_PWD: ${POSTGRES_PASSWORD:-shannon}  # 数据库密码（支持环境变量）
+      POSTGRES_SEEDS: postgres          # PostgreSQL服务主机名
+
+      # ========== Temporal服务配置 ==========
+      DYNAMIC_CONFIG_FILE_PATH: /etc/temporal/config/dynamicconfig.yaml  # 动态配置路径
+
+      # ========== gRPC服务端口配置 ==========
+      # Temporal由多个微服务组成，每个服务监听不同端口
+      SERVICES_FRONTEND_GRPC_PORT: 7233  # 前端服务：客户端API入口
+      SERVICES_MATCHER_GRPC_PORT: 7234   # 匹配服务：任务分配和负载均衡
+      SERVICES_WORKER_GRPC_PORT: 7235    # 工作服务：执行工作流逻辑
+      SERVICES_HISTORY_GRPC_PORT: 7236   # 历史服务：存储工作流执行历史
     volumes:
       - temporal_data:/data
       - ../../deploy/compose/temporal-dynamic-config.yaml:/etc/temporal/config/dynamicconfig.yaml:ro
@@ -1177,6 +1204,9 @@ gateway:
 
 ```go
 // main.go
+/// main 主函数 - 在容器启动时被调用
+/// 调用时机：Docker容器启动时，作为应用程序的入口点，负责初始化和运行整个服务
+/// 实现策略：信号处理机制 + 异步服务器启动 + 优雅关闭流程，确保容器能够正确响应系统信号和资源清理
 func main() {
     // 设置信号处理
     sigChan := make(chan os.Signal, 1)

@@ -8,6 +8,12 @@
 
 几年前，我们的AI系统还是"救火队长"的时代：
 
+**这块代码展示了什么？**
+
+这段代码展示了从"救火队长"到"消防局长"的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
 ```python
 # 传统监控的"黑暗时代"
 class AlertSystem:
@@ -67,7 +73,19 @@ class AlertSystem:
 
 Shannon的可观测性系统实现了从"救火队长"到"消防局长"的转变：
 
-```go
+`**这块代码展示了什么？**
+
+这段代码展示了从"救火队长"到"消防局长"的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
+**这块代码展示了什么？**
+
+这段代码展示了从"救火队长"到"消防局长"的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
+``go
 // Shannon的"上帝视角" - 主动预测和预防
 type GodViewSystem struct {
     // 主动监控 - 实时收集所有指标
@@ -153,49 +171,59 @@ type MetricCollector interface {
     Stop() error
 }
 
-/// 指标配置 - 灵活的指标配置
+/// MetricsConfig 指标配置 - 支持复杂场景的灵活指标配置
+/// 设计理念：配置驱动的可观测性，支持运行时动态调整监控策略
+/// 支持的指标类型：Counter(计数器)、Gauge(仪表盘)、Histogram(直方图)、Summary(摘要)
 type MetricsConfig struct {
-    // 全局配置
-    Enabled         bool          `yaml:"enabled"`
-    CollectionInterval time.Duration `yaml:"collection_interval"`
-    ExportInterval  time.Duration `yaml:"export_interval"`
+    // ========== 全局控制 ==========
+    Enabled         bool          `yaml:"enabled"`          // 是否启用指标收集，默认true
+    CollectionInterval time.Duration `yaml:"collection_interval"` // 收集间隔，默认15s
+    ExportInterval  time.Duration `yaml:"export_interval"`  // 导出间隔，默认10s
 
-    // 指标类型配置
-    Counters        *CounterConfig    `yaml:"counters"`
-    Gauges          *GaugeConfig      `yaml:"gauges"`
-    Histograms      *HistogramConfig  `yaml:"histograms"`
-    Summaries       *SummaryConfig    `yaml:"summaries"`
+    // ========== 指标类型配置 ==========
+    // 不同类型的指标适用于不同的监控场景
+    Counters        *CounterConfig    `yaml:"counters"`     // 单调递增的计数器，如请求数、错误数
+    Gauges          *GaugeConfig      `yaml:"gauges"`       // 可增可减的仪表盘，如内存使用率、并发数
+    Histograms      *HistogramConfig  `yaml:"histograms"`   // 分桶统计，如响应时间分布、延迟分布
+    Summaries       *SummaryConfig    `yaml:"summaries"`    // 分位数统计，如P95、P99响应时间
 
-    // 标签配置
-    DefaultLabels   map[string]string `yaml:"default_labels"`
+    // ========== 标签管理 ==========
+    DefaultLabels   map[string]string `yaml:"default_labels"` // 默认标签，如service_name、environment
 
-    // 导出配置
-    Exporters       []*ExporterConfig `yaml:"exporters"`
+    // ========== 数据导出 ==========
+    Exporters       []*ExporterConfig `yaml:"exporters"`     // 导出器配置，支持多后端导出
 }
 
 impl MetricsSystem {
     pub fn new(config *MetricsConfig) -> Result<Self, MetricsError> {
+        // 创建Prometheus注册表 - 作为所有指标的中央存储和管理中心
+        // 注册表负责指标的注册、收集和导出，是Prometheus生态的核心组件
         let registry = prometheus::Registry::new();
 
-        // 注册Go运行时指标
+        // 注册Go运行时指标收集器 - 自动收集Go语言运行时的关键指标
+        // 包括GC统计、goroutine数量、内存使用、线程数等，对性能诊断至关重要
         registry.register(Box::new(GoCollector::new()))?;
 
-        // 注册进程指标
+        // 注册进程级指标收集器 - 收集操作系统层面的进程统计信息
+        // 包括CPU使用率、内存占用、文件描述符数量、线程数等，反映系统资源使用情况
         registry.register(Box::new(ProcessCollector::new()))?;
 
-        // 注册业务指标收集器
+        // 创建和注册业务指标收集器 - 收集Shannon特有的AI业务指标
+        // 包括请求数、推理延迟、token使用量、错误率等AI系统特定的度量
         let collectors = Self::create_collectors(config)?;
 
+        // 将所有业务收集器注册到Prometheus注册表中
+        // 注册过程会验证指标名称和标签的唯一性，防止冲突
         for collector in &collectors {
             registry.register(Box::new(collector.clone()))?;
         }
 
         Ok(Self {
-            registry,
-            collectors,
-            aggregator: MetricsAggregator::new(),
-            exporter: MetricsExporter::new(&config.exporters)?,
-            config: config.clone(),
+            registry,              // 指标注册表，统一管理所有指标
+            collectors,            // 业务指标收集器列表
+            aggregator: MetricsAggregator::new(), // 指标聚合器，支持计算派生指标
+            exporter: MetricsExporter::new(&config.exporters)?, // 指标导出器，支持多种后端
+            config: config.clone(), // 配置副本，用于运行时重配置
         })
     }
 
@@ -1584,7 +1612,9 @@ type MetricsManager struct {
     logger   *zap.Logger            // 结构化日志
 }
 
-// 初始化指标体系
+/// NewMetricsManager 指标管理器构造函数 - 在系统启动时被调用
+/// 调用时机：应用程序初始化阶段，由main函数或依赖注入容器创建全局指标管理实例
+/// 实现策略：Prometheus注册表初始化 + Go运行时指标自动注册 + 进程级指标收集，确保监控系统的高可用性和完整性
 func NewMetricsManager(logger *zap.Logger) *MetricsManager {
     registry := prometheus.NewRegistry()
 
@@ -1601,7 +1631,9 @@ func NewMetricsManager(logger *zap.Logger) *MetricsManager {
     }
 }
 
-// 注册所有业务指标
+/// RegisterMetrics 业务指标注册方法 - 在指标管理器创建后被调用
+/// 调用时机：系统启动过程中，在NewMetricsManager之后立即调用，注册所有自定义业务指标
+/// 实现策略：逐个注册指标到Prometheus注册表 + 错误聚合处理 + 指标命名冲突检测，确保指标定义的正确性和唯一性
 func (m *MetricsManager) RegisterMetrics() error {
     // 工作流指标族
     if err := m.registry.Register(WorkflowsStarted); err != nil {
@@ -1656,6 +1688,9 @@ var WorkflowDuration = promauto.NewHistogramVec(
     []string{"workflow_type", "mode"},
 )
 
+/// TrackWorkflowExecution 工作流执行追踪方法 - 在工作流开始执行时被调用
+/// 调用时机：每次AI工作流启动时，由工作流引擎调用，开始记录执行指标和性能数据
+/// 实现策略：闭包模式延迟执行 + 多维度指标收集（类型/模式/状态/时长）+ 标签化分类，提供完整的工作流执行洞察
 // 指标使用示例：完整的工作流执行追踪
 func TrackWorkflowExecution(ctx context.Context, workflowType, mode, userID string) func(success bool, failureReason string) {
     // 1. 记录开始时间
@@ -1773,6 +1808,9 @@ type LLMInstrumentationMiddleware struct {
     logger *zap.Logger
 }
 
+/// Complete LLM调用追踪方法 - 在每次LLM推理请求时被调用
+/// 调用时机：业务逻辑需要调用LLM服务时，通过装饰器模式自动注入监控和追踪功能
+/// 实现策略：前后拦截模式（before/after）+ 多维度指标收集（延迟/成功率/Token使用）+ 错误分类统计，确保LLM调用的完整可观测性
 // 执行LLM调用的完整追踪
 func (m *LLMInstrumentationMiddleware) Complete(ctx context.Context, req *LLMRequest) (*LLMResponse, error) {
     // 递增活跃请求计数
@@ -1862,6 +1900,9 @@ type BudgetMetricsTracker struct {
     timeWindow string
 }
 
+/// UpdateUsage 预算使用指标更新方法 - 在每次预算消耗或检查时被调用
+/// 调用时机：用户Token消耗、预算验证、定时检查等场景中，实时更新预算使用状态
+/// 实现策略：多指标同步更新（绝对值/使用率/阈值告警）+ 标签化分类 + 接近限制预警，确保预算监控的实时性和准确性
 // 更新预算指标
 func (t *BudgetMetricsTracker) UpdateUsage(currentUsage, limit int64) {
     // 更新绝对值
@@ -1884,6 +1925,9 @@ func (t *BudgetMetricsTracker) UpdateUsage(currentUsage, limit int64) {
     }
 }
 
+/// RecordReset 预算重置事件记录方法 - 在预算周期重置时被调用
+/// 调用时机：定时任务重置预算、管理员手动重置、管理策略触发重置等情况下自动记录
+/// 实现策略：计数器递增 + 原因分类标签 + 用户/类型维度记录，便于分析重置频率和原因分布
 // 记录预算重置
 func (t *BudgetMetricsTracker) RecordReset(reason string) {
     BudgetResets.WithLabelValues(t.userID, t.budgetType, reason).Inc()
@@ -1931,6 +1975,9 @@ type VectorSearchInstrumentation struct {
     metrics *VectorDBMetrics
 }
 
+/// Search 向量搜索追踪方法 - 在每次向量相似度搜索时被调用
+/// 调用时机：AI记忆检索、RAG增强、推荐系统等需要向量搜索的场景中自动注入监控
+/// 实现策略：性能指标收集（延迟/KNN准确率）+ 搜索参数记录 + 缓存命中统计，确保向量数据库操作的透明度和性能监控
 // 执行向量搜索的完整追踪
 func (i *VectorSearchInstrumentation) Search(ctx context.Context, req *SearchRequest) (*SearchResponse, error) {
     startTime := time.Now()

@@ -31,7 +31,25 @@ Shannon的API网关设计正是基于这些教训，但针对AI系统的特殊�
 
 Shannon的API网关突破了传统局限，实现了：
 
-```go
+**这块代码展示了什么？**
+
+这段代码展示了传统API网关的五大问题的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
+`**这块代码展示了什么？**
+
+这段代码展示了传统API网关的五大问题的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
+**这块代码展示了什么？**
+
+这段代码展示了传统API网关的五大问题的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
+``go
 // Shannon网关的核心创新：上下文感知路由
 type IntelligentRouter struct {
     // 传统路由器只看URL
@@ -46,6 +64,9 @@ type IntelligentRouter struct {
     routingStrategies map[string]RoutingStrategy
 }
 
+/// Route 智能路由方法 - 在API请求经过认证后被立即调用
+/// 调用时机：用户请求通过身份验证后，在业务路由决策阶段调用，根据请求特征选择最优后端服务
+/// 实现策略：AI任务特征分析 + 负载均衡 + 安全策略过滤，实现智能的流量调度和资源优化
 func (ir *IntelligentRouter) Route(req *http.Request, userCtx *UserContext) (*RouteDecision, error) {
     // 1. 分析AI任务特征
     taskFeatures := ir.contextAnalyzer.AnalyzeTask(req.Body, userCtx)
@@ -74,96 +95,105 @@ Shannon的API网关采用生产级的分层架构，支持高并发、热重载�
 ```go
 // go/orchestrator/cmd/gateway/main.go
 
-// GatewayConfig：网关配置结构体
+/// GatewayConfig 网关配置结构体 - 定义API网关的完整行为和连接参数
+/// 设计理念：集中配置管理，支持环境隔离和运行时调整
+/// 配置来源：YAML文件 + 环境变量，支持热重载和验证
 type GatewayConfig struct {
-    // 服务器配置
+    // ========== 服务器基础配置 ==========
+    // 定义网关作为HTTP服务器的基本运行参数
     Server struct {
-        Host         string        `yaml:"host"`
-        Port         int           `yaml:"port"`
-        ReadTimeout  time.Duration `yaml:"read_timeout"`
-        WriteTimeout time.Duration `yaml:"write_timeout"`
-        IdleTimeout  time.Duration `yaml:"idle_timeout"`
+        Host         string        `yaml:"host"`          // 监听主机地址，默认"0.0.0.0"
+        Port         int           `yaml:"port"`          // 监听端口，默认8080
+        ReadTimeout  time.Duration `yaml:"read_timeout"`  // 读取超时，防止慢速攻击，默认30s
+        WriteTimeout time.Duration `yaml:"write_timeout"` // 写入超时，保证响应及时，默认30s
+        IdleTimeout  time.Duration `yaml:"idle_timeout"`  // 空闲超时，释放空闲连接，默认120s
     } `yaml:"server"`
 
-    // 后端服务配置
+    // ========== 后端服务拓扑 ==========
+    // 定义网关需要代理的所有微服务端点
+    // 支持服务发现和动态路由，实现微服务架构的统一入口
     Services struct {
         Orchestrator struct {
-            Host string `yaml:"host"`
-            Port int    `yaml:"port"`
+            Host string `yaml:"host"` // 编排器服务主机，支持域名或IP
+            Port int    `yaml:"port"` // 编排器服务端口，默认7233
         } `yaml:"orchestrator"`
         LLMService struct {
-            Host string `yaml:"host"`
-            Port int    `yaml:"port"`
+            Host string `yaml:"host"` // LLM服务主机
+            Port int    `yaml:"port"` // LLM服务端口，默认5000
         } `yaml:"llm_service"`
         AgentCore struct {
-            Host string `yaml:"host"`
-            Port int    `yaml:"port"`
+            Host string `yaml:"host"` // Agent核心服务主机
+            Port int    `yaml:"port"` // Agent核心服务端口，默认50051 (gRPC)
         } `yaml:"agent_core"`
     } `yaml:"services"`
 
-    // 安全配置
+    // ========== 安全防护配置 ==========
+    // 实现多层次的安全防护，包括身份验证、授权和访问控制
     Security struct {
         JWT struct {
-            Secret     string        `yaml:"secret"`
-            Issuer     string        `yaml:"issuer"`
-            Audience   string        `yaml:"audience"`
-            AccessTTL  time.Duration `yaml:"access_ttl"`
-            RefreshTTL time.Duration `yaml:"refresh_ttl"`
+            Secret     string        `yaml:"secret"`      // JWT签名密钥，用于令牌验证
+            Issuer     string        `yaml:"issuer"`      // JWT发行者标识
+            Audience   string        `yaml:"audience"`    // JWT受众标识
+            AccessTTL  time.Duration `yaml:"access_ttl"`  // 访问令牌有效期，默认15分钟
+            RefreshTTL time.Duration `yaml:"refresh_ttl"` // 刷新令牌有效期，默认7天
         } `yaml:"jwt"`
         APIKeys struct {
-            Enabled bool `yaml:"enabled"`
+            Enabled bool `yaml:"enabled"` // 是否启用API密钥认证，默认false
         } `yaml:"api_keys"`
         CORS struct {
-            AllowedOrigins []string `yaml:"allowed_origins"`
-            AllowedMethods []string `yaml:"allowed_methods"`
-            AllowedHeaders []string `yaml:"allowed_headers"`
-            MaxAge         int      `yaml:"max_age"`
+            AllowedOrigins []string `yaml:"allowed_origins"` // 允许的跨域源
+            AllowedMethods []string `yaml:"allowed_methods"` // 允许的HTTP方法
+            AllowedHeaders []string `yaml:"allowed_headers"` // 允许的请求头
+            MaxAge         int      `yaml:"max_age"`         // 预检请求缓存时间，默认86400秒
         } `yaml:"cors"`
     } `yaml:"security"`
 
-    // 限流配置
+    // ========== 流量控制配置 ==========
+    // 防止恶意流量和系统过载，实现公平的资源分配
     RateLimit struct {
-        Enabled     bool          `yaml:"enabled"`
-        Requests    int           `yaml:"requests"`
-        Window      time.Duration `yaml:"window"`
-        Burst       int           `yaml:"burst"`
-        CleanupInterval time.Duration `yaml:"cleanup_interval"`
+        Enabled     bool          `yaml:"enabled"`           // 是否启用限流，默认true
+        Requests    int           `yaml:"requests"`          // 时间窗口内的允许请求数，默认100
+        Window      time.Duration `yaml:"window"`            // 限流时间窗口，默认1分钟
+        Burst       int           `yaml:"burst"`             // 突发请求允许数，默认20
+        CleanupInterval time.Duration `yaml:"cleanup_interval"` // 清理过期记录间隔，默认10分钟
     } `yaml:"rate_limit"`
 
-    // 可观测性配置
+    // ========== 可观测性配置 ==========
+    // 提供完整的系统可见性，支持故障排查和性能优化
     Observability struct {
         Tracing struct {
-            Enabled  bool    `yaml:"enabled"`
-            SampleRate float64 `yaml:"sample_rate"`
+            Enabled  bool    `yaml:"enabled"`    // 是否启用分布式追踪，默认true
+            SampleRate float64 `yaml:"sample_rate"` // 采样率，0.0-1.0，默认0.1
         } `yaml:"tracing"`
         Metrics struct {
-            Enabled bool `yaml:"enabled"`
+            Enabled bool `yaml:"enabled"` // 是否启用指标收集，默认true
         } `yaml:"metrics"`
         Logging struct {
-            Level string `yaml:"level"`
+            Level string `yaml:"level"` // 日志级别：DEBUG/INFO/WARN/ERROR，默认INFO
         } `yaml:"logging"`
     } `yaml:"observability"`
 }
 
-// Gateway：API网关主结构体
+// Gateway：API网关的核心结构体，封装了所有网关功能和状态
+// 这是Shannon API网关的中央协调器，负责请求路由、安全控制、负载均衡等
 type Gateway struct {
-    config      *GatewayConfig
-    server      *http.Server
-    router      *http.ServeMux
-    middleware  []Middleware
-    handlers    map[string]http.Handler
-    metrics     *GatewayMetrics
-    health      *HealthChecker
-    logger      *zap.Logger
+    config      *GatewayConfig    // 网关配置，包含所有可配置参数
+    server      *http.Server      // HTTP服务器实例，处理所有入站请求
+    router      *http.ServeMux    // HTTP路由器，将URL路径映射到处理函数
+    middleware  []Middleware     // 中间件链，按顺序执行的请求处理逻辑
+    handlers    map[string]http.Handler // 路由处理器映射，路径到处理器的映射
+    metrics     *GatewayMetrics   // 监控指标收集器，收集性能和健康数据
+    health      *HealthChecker    // 健康检查器，监控后端服务状态
+    logger      *zap.Logger       // 结构化日志记录器，用于调试和监控
 
-    // 后端客户端
-    orchestratorClient pb.OrchestratorServiceClient
-    llmClient          *http.Client
-    agentClient        pb.AgentServiceClient
+    // 后端服务客户端 - 与各个微服务建立连接
+    orchestratorClient pb.OrchestratorServiceClient // gRPC客户端，连接到编排器服务
+    llmClient          *http.Client                  // HTTP客户端，连接到LLM服务
+    agentClient        pb.AgentServiceClient         // gRPC客户端，连接到Agent核心服务
 
-    // 并发控制
-    shutdownCh chan struct{}
-    wg         sync.WaitGroup
+    // 并发控制和生命周期管理
+    shutdownCh chan struct{}     // 优雅关闭信号通道
+    wg         sync.WaitGroup    // 等待组，确保所有goroutine在关闭前完成
 }
 
 // NewGateway：创建API网关实例

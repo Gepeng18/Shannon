@@ -8,7 +8,13 @@
 
 几年前，我们的AI系统还是"屏息等待"的时代：
 
-```python
+`**这块代码展示了什么？**
+
+这段代码展示了从"屏息等待"到"自然对话"的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
+``python
 # 批量响应的痛苦体验
 def chat_with_ai(question: str) -> str:
     print("思考中...")  # 显示给用户看
@@ -37,7 +43,25 @@ def chat_with_ai(question: str) -> str:
 
 Shannon的流式处理系统让AI学会了"呼吸"：
 
-```go
+`**这块代码展示了什么？**
+
+这段代码展示了从"屏息等待"到"自然对话"的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
+**这块代码展示了什么？**
+
+这段代码展示了从"屏息等待"到"自然对话"的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
+**这块代码展示了什么？**
+
+这段代码展示了从"屏息等待"到"自然对话"的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
+``go
 // AI的"呼吸" - 流式响应
 func StreamChatWithAI(question string, output chan string) {
     // 阶段1：立即确认收到问题
@@ -168,52 +192,72 @@ type AIEventLifecycle struct {
     cleaner *EventCleaner
 }
 
-/// 事件创建 - AI处理过程的事件化
+/// 事件创建 - 将AI处理过程中的关键状态转换为可观测的事件
+/// 这个函数是流式系统的核心，将原本不可见的内部处理过程转换为外部可追踪的事件流
 func (creator *EventCreator) CreateEvent(workflowID string, eventType AIEventType, data interface{}) *AIEvent {
     event := &AIEvent{
-        ID:         generateEventID(),
-        WorkflowID: workflowID,
-        Type:       eventType,
-        Timestamp:  time.Now(),
-        Sequence:   atomic.AddUint64(&globalSequence, 1), // 全局序列号
+        ID:         generateEventID(),  // 全局唯一的事件ID，用于事件追踪和去重
+        WorkflowID: workflowID,         // 关联到具体的AI工作流，便于事件聚合
+        Type:       eventType,          // 事件类型，如"reasoning_started", "tool_executed"等
+        Timestamp:  time.Now(),         // 事件发生时间戳，用于时间排序和时序分析
+        Sequence:   atomic.AddUint64(&globalSequence, 1), // 全局递增序列号，保证事件因果顺序
 
-        // 事件数据
+        // 事件负载数据 - 包含具体的业务数据，如推理结果、工具输出等
         Data: data,
 
-        // 元数据
+        // 元数据 - 提供事件上下文信息，便于调试和监控
         Metadata: map[string]interface{}{
-            "creator":    creator.name,
-            "version":    creator.version,
-            "hostname":   getHostname(),
-            "process_id": os.Getpid(),
+            "creator":    creator.name,      // 创建事件的组件名称
+            "version":    creator.version,   // 组件版本，便于兼容性检查
+            "hostname":   getHostname(),     // 所在主机，便于分布式追踪
+            "process_id": os.Getpid(),       // 进程ID，便于进程级别的故障排查
         },
     }
 
-    // 添加事件签名（用于完整性验证）
+    // 事件签名 - 使用HMAC或数字签名确保事件完整性，防止篡改
+    // 在分布式环境中，签名验证可以检测出恶意修改或传输错误
     event.Signature = creator.signEvent(event)
 
     return event
 }
 
-/// 事件路由 - 智能分发到正确的流
+/// RouteEvent 事件路由方法 - 在AI事件创建后被立即调用
+/// 调用时机：每次AI处理过程产生新事件时，由事件创建器调用，确保事件被路由到正确的Redis Stream
+/// 实现策略：基于事件类型和元数据的智能路由 + 流自动创建 + 路由验证，确保事件分发的准确性和可靠性
+///
+/// 路由决策逻辑：
+/// 1. 分析事件类型（reasoning_started, tool_executed, completion等）
+/// 2. 考虑事件元数据（workflow_id, user_id, priority等）
+/// 3. 确定目标流键名（shannon:events:{workflow_id} 或 shannon:events:{event_type}）
+/// 4. 支持动态流创建，避免预先配置所有可能的流
+///
+/// 高可用设计：
+/// - 流不存在时自动创建，无需人工干预
+/// - 路由决策验证，防止错误的事件分发
+/// - 支持流的分片和负载均衡，应对高并发场景
+/// - 路由失败时的优雅降级和重试机制
 func (router *EventRouter) RouteEvent(event *AIEvent) (string, error) {
-    // 1. 确定目标流
+    // 1. 确定目标流 - 基于事件特征智能计算目标Redis Stream的键名
+    // 支持按工作流ID、事件类型、用户ID等多维度路由，实现事件的分流和聚合
     streamKey := router.determineStreamKey(event)
 
-    // 2. 检查流是否存在
+    // 2. 检查流是否存在 - 在路由事件之前验证目标流是否已创建
+    // Redis Streams需要先创建才能写入，这是必要的存在性检查
     exists, err := router.streamExists(streamKey)
     if err != nil {
         return "", fmt.Errorf("检查流存在性失败: %w", err)
     }
 
-    // 3. 如果不存在，创建流
+    // 3. 如果不存在，创建流 - 实现流的按需创建，支持动态扩展
+    // 避免预先创建大量流造成的资源浪费，同时保证系统的灵活性
     if !exists {
         if err := router.createStream(streamKey); err != nil {
             return "", fmt.Errorf("创建流失败: %w", err)
         }
     }
 
-    // 4. 验证路由决策
+    // 4. 验证路由决策 - 对最终路由结果进行安全性和合理性检查
+    // 防止恶意事件被路由到敏感流，或错误的路由决策导致数据隔离失效
     if err := router.validateRouting(event, streamKey); err != nil {
         return "", fmt.Errorf("路由验证失败: %w", err)
     }
@@ -221,7 +265,9 @@ func (router *EventRouter) RouteEvent(event *AIEvent) (string, error) {
     return streamKey, nil
 }
 
-/// 事件存储 - 高性能持久化
+/// StoreEvent 事件存储方法 - 在事件路由完成后被同步调用
+/// 调用时机：事件被路由到特定流后，由事件处理器调用，将事件持久化到Redis Streams中
+/// 实现策略：事件序列化 + Redis XADD操作 + 流长度限制 + 索引更新，支持高并发写入和查询优化
 func (storage *EventStorage) StoreEvent(streamKey string, event *AIEvent) (string, error) {
     // 1. 序列化事件
     eventData, err := storage.serializeEvent(event)
@@ -291,7 +337,9 @@ type Consumer struct {
     AssignedTasks []string
 }
 
-/// 创建消费者组
+/// CreateConsumerGroup 消费者组创建方法 - 在新事件流初始化时被调用
+/// 调用时机：系统检测到新的事件流需要消费时，或应用程序启动时初始化消费者组
+/// 实现策略：Redis XGROUP CREATE操作 + 本地状态管理 + 健康监控启动，确保消费组的高可用性和故障恢复
 func (cgm *ConsumerGroupManager) CreateConsumerGroup(streamKey, groupName string) error {
     // 1. 检查组是否已存在
     exists, err := cgm.groupExists(streamKey, groupName)
@@ -324,7 +372,9 @@ func (cgm *ConsumerGroupManager) CreateConsumerGroup(streamKey, groupName string
     return nil
 }
 
-/// 消费者读取事件
+/// ReadEvents 事件消费读取方法 - 在消费者处理循环中被持续调用
+/// 调用时机：消费者线程/协程的主循环中周期性调用，从Redis Streams读取待处理的事件
+/// 实现策略：优先读取pending消息 + 新消息补充 + 消费者状态更新 + 公平调度，确保事件处理的有序性和负载均衡
 func (cgm *ConsumerGroupManager) ReadEvents(groupName, consumerName string, count int64) ([]redis.XMessage, error) {
     // 1. 获取消费者组
     group, exists := cgm.getGroup(groupName)
@@ -357,7 +407,9 @@ func (cgm *ConsumerGroupManager) ReadEvents(groupName, consumerName string, coun
     return pending, nil
 }
 
-/// 故障转移处理
+/// HandleConsumerFailure 消费者故障处理方法 - 在消费者心跳检测失败时被自动调用
+/// 调用时机：消费者健康检查器检测到消费者无响应或异常退出时，触发故障转移流程
+/// 实现策略：消费者状态标记 + 任务重新分配 + 替代消费者启动 + 告警通知，确保服务的高可用性和数据不丢失
 func (cgm *ConsumerGroupManager) HandleConsumerFailure(groupName, consumerName string) error {
     // 1. 标记消费者为失败
     group, exists := cgm.getGroup(groupName)
@@ -1042,7 +1094,9 @@ type StreamingMetrics struct {
     ConsumeErrors       prometheus.Counter
 }
 
-/// 健康检查
+/// CheckHealth 流式系统健康检查方法 - 在监控周期或告警触发时被调用
+/// 调用时机：定时健康检查任务中周期性执行，或在系统出现异常时手动触发，用于评估整个流式系统的健康状态
+/// 实现策略：多维度健康检查（Redis/WebSocket/事件处理/队列积压）+ 综合评分计算，提供系统健康度的量化评估
 func (sm *StreamingMonitor) CheckHealth(ctx context.Context) *HealthReport {
     report := &HealthReport{
         Timestamp: time.Now(),
@@ -1067,7 +1121,9 @@ func (sm *StreamingMonitor) CheckHealth(ctx context.Context) *HealthReport {
     return report
 }
 
-/// 性能分析
+/// AnalyzePerformance 性能分析方法 - 在性能监控周期或性能问题排查时被调用
+/// 调用时机：定时性能报告生成，或运维人员分析系统瓶颈时手动调用，用于深入分析流式系统的性能特征
+/// 实现策略：多指标时间序列分析（延迟/吞吐量/错误率/资源使用）+ 趋势分析 + 智能优化建议生成
 func (sm *StreamingMonitor) AnalyzePerformance(timeRange time.Duration) *PerformanceReport {
     report := &PerformanceReport{
         TimeRange: timeRange,

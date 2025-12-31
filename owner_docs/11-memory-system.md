@@ -16,6 +16,12 @@
 **技术本质**：
 AI的"失忆症"不是技术缺陷，而是**设计选择**。传统的LLM架构基于**无状态的请求-响应模式**：
 
+**这块代码展示了什么？**
+
+这段代码展示了从"对话即人生"到"每句都陌生"的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
 ```python
 # 传统LLM的"失忆"架构
 class StatelessLLM:
@@ -49,7 +55,25 @@ print(llm.chat("我刚才说了什么颜色？"))  # "抱歉，我没有之前�
 
 Shannon的记忆系统基于一个激进的理念：**AI应该像人类一样拥有持久记忆**。
 
-```go
+`**这块代码展示了什么？**
+
+这段代码展示了从"对话即人生"到"每句都陌生"的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
+**这块代码展示了什么？**
+
+这段代码展示了从"对话即人生"到"每句都陌生"的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
+**这块代码展示了什么？**
+
+这段代码展示了从"对话即人生"到"每句都陌生"的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
+``go
 // Shannon的"有记忆"AI架构
 type MemorableAI struct {
     // 短期记忆 - 当前对话
@@ -101,30 +125,45 @@ Shannon选择Qdrant作为向量数据库不是偶然，而是经过深思熟虑�
 ```go
 // go/orchestrator/internal/memory/vector_store/qdrant_client.go
 
-/// Qdrant向量数据库客户端 - Shannon记忆系统的核心
+/// QdrantClient Shannon记忆系统的核心向量数据库客户端
+/// 设计理念：将向量数据库从基础设施层提升为AI记忆系统的核心组件
+/// 核心能力：高性能向量检索、语义搜索、记忆存储与更新
+///
+/// 架构优势：
+/// - 连接池复用：减少TCP握手开销，提升并发性能
+/// - 熔断保护：防止雪崩效应，确保系统稳定性
+/// - 多级缓存：LRU缓存 + 集合缓存，显著提升查询性能
+/// - 可观测性：完整的监控指标和分布式追踪
+/// - 并发控制：信号量限制，防止过载
 type QdrantClient struct {
-    // 连接管理
-    httpClient *http.Client
-    baseURL    string
-    apiKey     string
+    // ========== 连接管理层 ==========
+    // 负责与Qdrant服务建立和维护可靠的网络连接
+    httpClient *http.Client  // HTTP客户端，配置连接池和超时设置
+    baseURL    string        // Qdrant服务基础URL
+    apiKey     string        // API密钥，用于身份验证
 
-    // 连接池和熔断器
-    connectionPool   *ConnectionPool
-    circuitBreaker   *CircuitBreaker
+    // ========== 弹性保障层 ==========
+    // 实现高可用性和容错能力，应对网络不稳定和服务异常
+    connectionPool   *ConnectionPool   // HTTP连接池，复用TCP连接
+    circuitBreaker   *CircuitBreaker   // 熔断器，防止级联故障
 
-    // 缓存层 - 减少重复查询
-    queryCache       *LRUCache[string, *QueryResult]
-    collectionCache  *LRUCache[string, *CollectionInfo]
+    // ========== 性能优化层 ==========
+    // 多级缓存策略，大幅提升查询性能和减少数据库压力
+    queryCache       *LRUCache[string, *QueryResult]  // 查询结果缓存
+    collectionCache  *LRUCache[string, *CollectionInfo] // 集合元信息缓存
 
-    // 性能监控
-    metrics          *VectorMetrics
-    tracer           trace.Tracer
+    // ========== 可观测性层 ==========
+    // 完整的监控和追踪体系，支持故障排查和性能优化
+    metrics          *VectorMetrics  // Prometheus指标收集器
+    tracer           trace.Tracer    // OpenTelemetry分布式追踪器
 
-    // 配置
-    config           *QdrantConfig
+    // ========== 配置管理层 ==========
+    // 集中管理所有客户端配置参数，支持运行时调整
+    config           *QdrantConfig   // 客户端完整配置
 
-    // 并发控制
-    semaphore        chan struct{} // 限制并发请求
+    // ========== 并发控制层 ==========
+    // 防止并发过载，确保系统资源使用可控
+    semaphore        chan struct{}   // 并发控制信号量
 }
 
 /// Qdrant配置 - 针对AI记忆优化的参数
@@ -157,7 +196,9 @@ type QdrantConfig struct {
     ReplicationFactor int         `yaml:"replication_factor"`
 }
 
-/// 集合管理 - 动态创建和管理向量集合
+/// EnsureCollection 集合管理方法 - 在AI记忆存储初始化时被调用
+/// 调用时机：系统启动时检查集合存在性，或用户首次使用特定记忆类型时自动创建集合
+/// 实现策略：先检查后创建，支持配置验证和自动迁移，确保集合配置的一致性和可用性
 func (qc *QdrantClient) EnsureCollection(ctx context.Context, name string, config *CollectionConfig) error {
     // 1. 检查集合是否存在
     exists, err := qc.collectionExists(ctx, name)

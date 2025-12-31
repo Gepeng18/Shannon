@@ -10,6 +10,12 @@
 
 **第一重困境：性能 vs 安全**
 
+**这块代码展示了什么？**
+
+这段代码展示了当AI遇上系统架构的四重困境的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
 ```rust
 // 在传统系统中，你必须二选一
 // 要么选择高性能但不安全的C++
@@ -43,6 +49,12 @@ def safe_but_slow_ai_inference(model, input):
 
 **第三重困境：开发效率 vs 运行效率**
 
+**这块代码展示了什么？**
+
+这段代码对比了Python和Rust在AI工作流实现中的不同哲学。Python版本强调动态性、灵活性和开发效率，而Rust版本强调静态类型安全和运行时性能。背景是：AI系统需要平衡快速原型开发和生产环境的高性能要求，这两种语言代表了不同的技术取舍。
+
+这段代码的目的是说明编程语言选择对AI系统架构的影响，以及为什么Shannon需要多语言架构来平衡这些矛盾。
+
 ```python
 # Python开发者眼中的完美代码
 class AIWorkflow:
@@ -55,6 +67,12 @@ class AIWorkflow:
         # 丰富的生态，快速原型
         return await tool.execute(task.params)
 ```
+
+**这块代码展示了什么？**
+
+这段代码展示了Rust在AI工作流实现中的性能优化策略。背景是：Rust通过泛型和编译时类型检查提供了零运行时开销的性能保证，避免了Python的动态类型检查开销，在AI系统中这种性能差异可能达到30-50%。
+
+这段代码的目的是说明为什么Rust适合构建高性能的AI基础设施，以及编译时保证对系统稳定性的重要价值。
 
 ```rust
 // Rust开发者眼中的性能保证
@@ -89,6 +107,12 @@ AI领域日新月异：
 ### Shannon的诞生：一场被迫的技术豪赌
 
 Shannon的架构设计不是从教科书上抄来的，而是从血淋淋的实践中总结出来的。我们团队之前维护过一个单体的AI推理平台：
+
+**这块代码展示了什么？**
+
+这段代码演示了单体AI平台架构的典型问题，包括网络依赖、本地存储、工具执行和业务逻辑的耦合。背景是：传统的单体架构将所有功能塞进一个应用，导致技术栈冲突、资源竞争和故障传播，这些问题在AI系统中尤为严重。
+
+这段代码的目的是说明为什么AI系统不适合单体架构，以及微服务架构的必要性。
 
 ```python
 # 单体架构的典型问题
@@ -201,6 +225,12 @@ impl WasiSandbox {
 }
 ```
 
+**这块代码展示了什么？**
+
+这段代码展示了Go语言在网络编排和并发处理方面的优势。WorkflowOrchestrator结构体整合了Temporal工作流引擎和Redis缓存，实现了高效的任务调度和状态管理。背景是：AI系统需要处理大量并发请求，Go的goroutine模型和Temporal的可靠工作流是解决复杂并发场景的理想选择。
+
+这段代码的目的是说明为什么选择Go作为编排层的核心语言，以及Temporal工作流在AI系统中的应用价值。
+
 ```go
 // Go负责网络和编排 - 高效并发
 type WorkflowOrchestrator struct {
@@ -208,10 +238,27 @@ type WorkflowOrchestrator struct {
     eventBus       *redis.Stream
 }
 
+/// ExecuteWorkflow 工作流执行方法 - 在API网关接收到用户请求后被调用
+/// 调用时机：用户提交复杂任务时，由网关服务路由到Orchestrator服务进行工作流编排
+/// 实现策略：DAG图构建 + goroutine池并发执行 + 事件驱动状态同步，确保复杂任务的高效可靠执行
+/// ExecuteWorkflow 工作流执行方法 - 在接收到复杂任务请求时被调用
+/// 调用时机：当Orchestrator接收到需要多步骤、长周期协调的复杂AI任务请求时，由任务调度器调用
+/// 实现策略：利用Temporal工作流引擎的特性，支持数万个goroutine并发处理、优雅错误处理、重试、超时和取消机制，确保复杂任务的可靠执行
+///
+/// Temporal的核心优势：
+/// - 数万个goroutine并发处理：Temporal能够高效地调度和管理大量的并发操作（goroutines），而不会耗尽系统资源
+/// - 优雅的错误处理和重试：Temporal内置了强大的错误处理和自动重试机制，可以配置不同的重试策略（如指数退避）
+/// - 内置的超时和取消机制：Temporal提供了灵活的超时配置（任务超时、工作流超时）和取消机制
+///
+/// 这种设计让Shannon能够处理从简单查询到复杂多步骤AI任务的全谱系工作负载，
+/// 同时保证了系统的稳定性和可扩展性。
 func (o *WorkflowOrchestrator) ExecuteWorkflow(ctx context.Context, req *WorkflowRequest) error {
-    // 数万个goroutine并发处理
-    // 优雅的错误处理和重试
-    // 内置的超时和取消机制
+    // 实际实现会调用Temporal SDK来启动和执行工作流
+    // 这里只是概念展示，具体实现包含：
+    // 1. 工作流定义和注册
+    // 2. 活动（Activity）的定义和实现
+    // 3. 工作流启动和状态跟踪
+    // 4. 错误处理和恢复逻辑
     return nil
 }
 ```
@@ -241,6 +288,12 @@ Shannon将复杂的AI系统拆分为8个微服务，每个服务都有明确的�
 **Agent核心 (Rust)**：安全执行、性能优化、资源隔离
 
 这种拆分不是随意的，而是基于**领域驱动设计(DDD)**的原则：
+
+**这块代码展示了什么？**
+
+这段代码演示了领域驱动设计在微服务架构中的应用，每个服务都有独立的领域模型。Task、Workflow、ExecutionResult等结构体代表了不同的业务领域。背景是：微服务架构的核心是业务边界划分，领域模型的独立性确保了服务的自治性和可维护性。
+
+这段代码的目的是说明如何通过DDD原则设计微服务架构，以及为什么这种设计特别适合AI系统的复杂业务逻辑。
 
 ```go
 // 每个服务都有自己的领域模型
@@ -285,12 +338,21 @@ class TightlyCoupledService:
 
 Shannon采用事件驱动架构：
 
+**这块代码展示了什么？**
+
+这段代码展示了事件驱动架构的核心组件，EventDrivenOrchestrator通过Redis Streams实现服务间的松耦合通信。背景是：传统同步调用会导致服务间紧耦合，事件驱动架构通过异步消息队列实现服务的解耦，提高了系统的可扩展性和容错性。
+
+这段代码的目的是说明为什么AI系统需要事件驱动架构，以及Redis Streams如何支持高并发的事件处理。
+
 ```go
 // 事件驱动的松耦合设计
 type EventDrivenOrchestrator struct {
     eventBus *redis.Stream
 }
 
+/// StartTask 事件驱动任务启动方法 - 在工作流编排完成后被调用
+/// 调用时机：Orchestrator确定使用事件驱动模式处理任务时，由工作流引擎触发任务执行
+/// 实现策略：事件发布模式（fire-and-forget）+ 异步处理解耦 + 事件追踪链路，确保任务启动的可靠性和可观测性
 func (o *EventDrivenOrchestrator) StartTask(ctx context.Context, task *Task) error {
     // 1. 发布任务开始事件
     o.eventBus.Publish("task.started", TaskStartedEvent{
@@ -304,6 +366,9 @@ func (o *EventDrivenOrchestrator) StartTask(ctx context.Context, task *Task) err
     return nil
 }
 
+/// HandleTaskStarted 任务开始事件处理方法 - 在监听到task.started事件时被自动调用
+/// 调用时机：ExecutorService订阅了task.started事件，当Orchestrator发布该事件时触发异步处理
+/// 实现策略：事件驱动的反应式处理 + goroutine隔离执行 + 错误隔离，确保任务处理的并发安全和故障隔离
 // 其他服务监听感兴趣的事件
 func (e *ExecutorService) HandleTaskStarted(event TaskStartedEvent) {
     // 异步处理任务
@@ -395,6 +460,12 @@ Shannon的架构图不仅仅是框框线线，更是我们一年多实战经验�
 
 网关不仅是"门卫"，更是整个系统的"大脑"：
 
+**这块代码展示了什么？**
+
+这段代码展示了API网关的核心架构，GatewayServer整合了路由、认证、负载均衡、监控等功能。背景是：微服务架构中，网关是所有外部请求的入口点，需要处理复杂的路由逻辑、安全控制和流量管理，是系统可观测性和可靠性的关键组件。
+
+这段代码的目的是说明为什么网关是Shannon系统的"大脑"，以及它如何协调各个微服务的协作。
+
 ```go
 // go/gateway/internal/server/server.go
 
@@ -406,6 +477,9 @@ type GatewayServer struct {
     metrics         *metrics.Collector
 }
 
+/// ServeHTTP HTTP请求处理方法 - 在接收到所有HTTP请求时被自动调用
+/// 调用时机：每个进入Shannon系统的HTTP请求都会经过此网关方法，作为系统的统一入口点
+/// 实现策略：多层安全检查（认证/授权/限流）+ 智能路由（服务发现/负载均衡）+ 故障防护（熔断/降级），确保请求的安全可靠处理
 func (s *GatewayServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
     start := time.Now()
 
@@ -487,6 +561,12 @@ func (s *GatewayServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 #### 编排器的Temporal集成
 
 Temporal不是简单的"工作流引擎"，而是Shannon可靠性的基石：
+
+**这块代码展示了什么？**
+
+这段代码展示了Temporal工作流引擎在AI系统中的应用，TaskWorkflow定义了任务执行的完整生命周期。背景是：AI任务执行涉及多个步骤和长时间运行，Temporal提供了可靠的工作流状态管理和故障恢复机制，确保复杂AI任务的正确执行。
+
+这段代码的目的是说明Temporal如何为AI系统提供企业级的可靠性保障，以及工作流编排的核心模式。
 
 ```go
 // go/orchestrator/internal/workflows/task_workflow.go
@@ -669,6 +749,12 @@ public class WasiSandbox {
 ```
 
 **Go的选择：平衡但妥协太多**
+
+**这块代码展示了什么？**
+
+这段代码对比了Go和Rust在WebAssembly安全沙箱实现中的差异。Go版本虽然简单易用，但缺乏Rust的内存安全保证。背景是：AI代码执行需要绝对的安全性，Go的垃圾回收和运行时开销虽然提高了开发效率，但在安全性和性能方面存在固有限制。
+
+这段代码的目的是说明为什么Shannon最终选择Rust作为安全执行的核心语言。
 
 ```go
 // Go实现 - 简单但不够安全
@@ -1013,6 +1099,12 @@ pub async fn execute_wasm(&self, wasm_bytes: &[u8], input: &str) -> Result<Strin
 
 #### Temporal工作流的核心架构
 
+**这块代码展示了什么？**
+
+这段代码展示了Temporal工作流的完整实现，包括工作流定义、活动调用和错误处理。背景是：复杂AI任务需要可靠的状态管理和故障恢复，Temporal通过持久化工作流状态确保即使系统重启也不会丢失任务进度。
+
+这段代码的目的是说明Temporal如何通过声明式工作流定义支持复杂AI任务的可靠执行。
+
 ```go
 // go/orchestrator/internal/workflows/simple_workflow.go
 
@@ -1111,6 +1203,12 @@ func SimpleTaskWorkflow(ctx workflow.Context, input TaskInput) (TaskResult, erro
 
 #### 活动(Activity)系统的设计哲学
 
+**这块代码展示了什么？**
+
+这段代码展示了Temporal活动系统的设计，Activities结构体封装了所有可重试的业务逻辑。背景是：Temporal将工作流和活动分离，活动是可以独立重试的业务操作单元，这种设计提高了系统的可靠性和可维护性。
+
+这段代码的目的是说明Temporal活动系统如何支持复杂业务逻辑的模块化和重试机制。
+
 ```go
 // go/orchestrator/internal/activities/activities.go
 
@@ -1207,6 +1305,12 @@ func (a *Activities) FetchSessionContextActivity(
    ```
 
 #### goroutine并发模型的实现
+
+**这块代码展示了什么？**
+
+这段代码展示了Go语言的goroutine并发模型在AI任务执行中的应用，支持并行执行多个活动。背景是：AI任务通常包含多个独立步骤（如数据预处理、模型推理、结果处理），并发执行可以显著提高整体性能。
+
+这段代码的目的是说明Go的并发编程如何优化AI工作流的执行效率。
 
 ```go
 // go/orchestrator/internal/activities/parallel_execution.go
@@ -1308,6 +1412,12 @@ ENTRYPOINT ["/orchestrator"]
 
 #### LLMManager的核心架构设计
 
+**这块代码展示了什么？**
+
+这段代码展示了LLM服务的核心架构，LLMManager负责管理多个AI模型提供商，实现智能路由和弹性机制。背景是：AI模型服务需要处理多种提供商（OpenAI、Claude等）的差异，Python丰富的生态系统和异步编程能力是构建复杂AI服务的基础。
+
+这段代码的目的是说明Python如何通过面向对象设计和异步编程支持复杂的LLM服务架构。
+
 ```python
 # python/llm-service/llm_service/llm_provider/manager.py
 
@@ -1408,6 +1518,12 @@ class LLMManager:
 
 #### 智能路由和提供商选择的实现
 
+**这块代码展示了什么？**
+
+这段代码实现了智能的AI模型提供商选择算法，根据请求特征和系统状态动态选择最合适的提供商。背景是：不同AI模型有不同的优势（速度、质量、成本），智能路由可以根据任务需求自动选择最佳模型，提供最优的用户体验。
+
+这段代码的目的是说明如何通过算法实现AI模型的智能调度和负载均衡。
+
 ```python
 async def _select_provider(self, request: CompletionRequest) -> BaseProvider:
     """
@@ -1454,6 +1570,12 @@ async def _apply_selection_strategy(self, candidates: List[ProviderCandidate],
 ```
 
 #### 弹性机制的实现
+
+**这块代码展示了什么？**
+
+这段代码实现了AI服务的弹性机制，包括重试、熔断和降级处理。背景是：AI服务依赖外部API，网络不稳定、配额限制、服务降级等情况时有发生，弹性机制确保了系统在各种异常情况下的稳定运行。
+
+这段代码的目的是说明如何通过异步编程和错误处理模式构建可靠的AI服务基础设施。
 
 ```python
 async def _execute_with_resilience(self, provider: BaseProvider,
@@ -1606,6 +1728,12 @@ async def _single_complete_with_retry(self, provider: BaseProvider,
 
 #### 异步架构的实现
 
+**这块代码展示了什么？**
+
+这段代码展示了FastAPI框架的异步API实现，支持高并发的AI模型调用。背景是：AI推理通常需要等待较长时间，异步架构可以同时处理多个请求，提高系统的整体吞吐量和资源利用率。
+
+这段代码的目的是说明Python异步编程如何支持高并发的AI服务，以及REST API设计模式在AI系统中的应用。
+
 ```python
 # python/llm-service/llm_service/api/completions.py
 
@@ -1655,6 +1783,12 @@ async def create_completion(request: CompletionRequest) -> CompletionResponse:
 Shannon采用Redis Streams作为分布式事件总线，让我们深入分析其架构设计和实现机制。
 
 #### 事件管理器的核心架构
+
+**这块代码展示了什么？**
+
+这段代码展示了基于Redis Streams的事件管理系统架构，支持发布、订阅和持久化功能。背景是：微服务架构需要可靠的事件通信机制，Redis Streams提供了高性能的消息队列和持久化能力，支持大规模分布式系统的消息传递。
+
+这段代码的目的是说明Redis Streams如何构建可靠的分布式事件总线，以及事件驱动架构的核心组件。
 
 ```go
 // go/orchestrator/internal/streaming/manager.go
@@ -1723,6 +1857,12 @@ type subscription struct {
    ```
 
 #### 事件发布机制的实现
+
+**这块代码展示了什么？**
+
+这段代码实现了事件发布的核心逻辑，包括事件ID生成、序列化、发布到Redis Streams等步骤。背景是：分布式系统中事件发布需要保证顺序性和可靠性，Redis Streams的数据结构天然支持有序消息和消费者组模式。
+
+这段代码的目的是说明如何实现可靠的事件发布机制，以及Redis Streams在事件驱动架构中的具体应用。
 
 ```go
 func (m *Manager) Publish(workflowID string, evt Event) error {
@@ -1817,6 +1957,12 @@ func (m *Manager) Publish(workflowID string, evt Event) error {
    ```
 
 #### 订阅和消费机制
+
+**这块代码展示了什么？**
+
+这段代码实现了事件订阅和消费机制，支持从指定位置开始消费事件流。背景是：事件驱动系统需要支持多种消费模式，包括实时消费、历史回放、消费者组等，Redis Streams提供了丰富的消费语义。
+
+这段代码的目的是说明如何实现灵活的事件消费机制，以及异步编程在事件处理中的应用。
 
 ```go
 func (m *Manager) SubscribeFrom(workflowID string, buffer int, startID string) chan Event {
@@ -1913,6 +2059,12 @@ func (m *Manager) startStreamConsumer(workflowID, startID string, ch chan Event)
    ```
 
 #### 持久化worker的实现
+
+**这块代码展示了什么？**
+
+这段代码实现了事件持久化的worker机制，通过多个goroutine并发处理事件写入。背景是：高并发系统需要将事件写入磁盘以确保可靠性，但写入操作不能阻塞主流程，worker模式提供了异步持久化的解决方案。
+
+这段代码的目的是说明如何通过并发worker实现高性能的事件持久化，以及Go的goroutine在异步处理中的优势。
 
 ```go
 func (m *Manager) startPersistenceWorkers(ctx context.Context) {
@@ -2028,6 +2180,13 @@ CREATE TABLE task_executions (
 ```
 
 #### Redis：高性能缓存和会话
+
+**这块代码展示了什么？**
+
+这段代码展示了Redis在会话管理和缓存中的应用，包括会话的序列化存储和过期机制。背景是：AI系统需要高效的状态管理，Redis提供了内存级的读写性能和丰富的数据结构，支持复杂的状态管理需求。
+
+这段代码的目的是说明Redis如何通过键值存储和TTL机制支持AI系统的状态管理。
+
 ```go
 // 会话存储：高速读写，低延迟
 func (m *Manager) SaveSession(ctx context.Context, session *Session) error {
@@ -2037,6 +2196,13 @@ func (m *Manager) SaveSession(ctx context.Context, session *Session) error {
 ```
 
 #### Qdrant：向量相似性搜索
+
+**这块代码展示了什么？**
+
+这段代码展示了Qdrant向量数据库的使用，支持语义相似度搜索。背景是：AI系统需要处理向量嵌入，向量数据库提供了专门优化的相似度搜索算法和索引结构，能够高效处理高维向量数据的检索。
+
+这段代码的目的是说明向量数据库如何支持AI系统的语义搜索和RAG（Retrieval-Augmented Generation）功能。
+
 ```python
 # 向量搜索：语义相似度，AI原生
 client.create_collection(
@@ -2079,6 +2245,13 @@ gateway:
 ```
 
 #### 2. 认证授权
+
+**这块代码展示了什么？**
+
+这段代码展示了基于JWT和RBAC的认证授权中间件实现。背景是：API网关需要验证用户身份和权限，JWT提供了无状态的身份验证，RBAC提供了细粒度的权限控制，确保只有授权用户才能访问受保护的资源。
+
+这段代码的目的是说明网关如何通过中间件模式实现安全认证和授权检查。
+
 ```go
 // JWT + RBAC认证
 func (m *AuthMiddleware) Middleware(next http.Handler) http.Handler {
@@ -2132,6 +2305,12 @@ impl WasiSandbox {
 
 基于OpenTelemetry的分布式追踪：
 
+**这块代码展示了什么？**
+
+这段代码展示了OpenTelemetry分布式追踪的实现，支持跨服务的请求跟踪。背景是：微服务架构中单个请求可能跨越多个服务，分布式追踪能够完整记录请求的执行路径，帮助定位性能瓶颈和故障点。
+
+这段代码的目的是说明如何通过追踪实现微服务系统的可观测性。
+
 ```go
 // 请求追踪
 func StartHTTPRequestSpan(ctx context.Context, req *http.Request) (context.Context, trace.Span) {
@@ -2147,6 +2326,12 @@ func StartHTTPRequestSpan(ctx context.Context, req *http.Request) (context.Conte
 ### 指标收集
 
 Prometheus指标体系：
+
+**这块代码展示了什么？**
+
+这段代码展示了基于Prometheus的监控指标体系，包括工作流、活动、错误等各种关键指标。背景是：分布式系统需要全面的监控覆盖，Prometheus提供了标准化的指标收集和查询语言，支持复杂的数据聚合和告警规则。
+
+这段代码的目的是说明如何通过指标监控实现系统的可观测性和自动化运维。
 
 ```go
 var (

@@ -8,6 +8,12 @@
 
 几年前，我们的AI系统还停留在石器时代：
 
+**这块代码展示了什么？**
+
+这段代码展示了从"一个萝卜一个坑"到"并行狂欢"的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
 ```python
 # 石器时代的AI处理 - 串行地狱
 def analyze_company_ai_strategy(company_name: str):
@@ -50,7 +56,19 @@ def analyze_company_ai_strategy(company_name: str):
 
 Shannon的DAG工作流将这个20分钟的任务优化到5分钟：
 
-```go
+`**这块代码展示了什么？**
+
+这段代码展示了从"一个萝卜一个坑"到"并行狂欢"的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
+**这块代码展示了什么？**
+
+这段代码展示了从"一个萝卜一个坑"到"并行狂欢"的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
+``go
 // DAG革命：并行思维的新纪元
 func AnalyzeCompanyAIStrategyDAG(companyName string) *DAGWorkflow {
     dag := NewDAGWorkflow()
@@ -156,12 +174,15 @@ type Node struct {
     CreatedAt  time.Time            `json:"created_at"`
 }
 
-/// 数据规格 - 类型安全的节点间通信
+/// DataSpec 数据规格 - 类型安全的节点间通信协议
+/// 作用：定义节点输入输出的数据格式，确保类型安全和数据完整性
+/// 支持的数据类型：text（纯文本）、json（结构化数据）、file（文件路径）、embedding（向量数据）
+/// 通过JSON Schema进行数据验证，防止运行时类型错误
 type DataSpec struct {
-    Type        string `json:"type"`         // 数据类型: text, json, file, embedding
-    Schema      string `json:"schema"`       // JSON Schema（可选）
-    Description string `json:"description"`  // 数据描述
-    Required    bool   `json:"required"`     // 是否必需
+    Type        string `json:"type"`         // 数据类型：text/plain、json/object、file/path、embedding/vector
+    Schema      string `json:"schema"`       // JSON Schema定义，用于数据结构验证（可选）
+    Description string `json:"description"`  // 数据描述，帮助理解数据用途和格式
+    Required    bool   `json:"required"`     // 是否必需：true=必须提供，false=可选数据
 }
 
 /// 节点状态机 - 精确的状态跟踪
@@ -336,6 +357,9 @@ DAG的核心算法是拓扑排序：
 
 ```go
 // 拓扑排序实现 - Kahn算法
+/// TopologicalSort 拓扑排序算法 - 在DAG执行前被调用
+/// 调用时机：工作流开始执行时，由调度器调用，确保节点按照依赖关系正确的执行顺序
+/// 实现策略：Kahn算法实现，有向无环图的线性排序，保证依赖节点先于被依赖节点执行
 func (dag *DAG) TopologicalSort() ([]string, error) {
     dag.mu.RLock()
     defer dag.mu.RUnlock()
@@ -388,15 +412,28 @@ func (dag *DAG) TopologicalSort() ([]string, error) {
     return result, nil
 }
 
-/// 关键路径分析 - 找出最长的执行路径
+/// GetCriticalPath 关键路径分析方法 - 在DAG调度优化时被调用
+/// 调用时机：工作流执行前需要分析性能瓶颈，或用户需要了解最长执行路径时
+/// 实现策略：关键路径算法（CPM）+ 正向反向传递计算 + 拓扑排序依赖，确保找出真正影响总工期的路径
+///
+/// 算法原理：
+/// - 正向传递：计算每个节点的最早开始时间（ES）和最早完成时间（EF）
+/// - 反向传递：计算每个节点的最晚开始时间（LS）和最晚完成时间（LF）
+/// - 松弛时间：LS - ES，表示节点延误的最大容忍时间
+/// - 关键路径：松弛时间为0的节点序列，总工期由关键路径决定
+///
+/// 时间复杂度：O(V + E)，V为节点数，E为边数
 func (dag *DAG) GetCriticalPath() ([]string, time.Duration, error) {
     // 1. 构建执行时间映射
+    // 为每个节点建立ID到执行时长的映射，用于后续时间计算
     nodeDuration := make(map[string]time.Duration)
     for id, node := range dag.Nodes {
         nodeDuration[id] = node.EstimatedDuration
     }
 
-    // 2. 正向传递 - 计算最早开始时间
+    // 2. 正向传递 - 计算最早开始时间 (Earliest Start Time)
+    // 算法：ES[i] = max{ EF[j] | j是i的前驱节点 }
+    // 其中EF[j] = ES[j] + duration[j]
     earliestStart := make(map[string]time.Duration)
     for _, nodeID := range dag.TopologicalOrder {
         maxPredFinish := time.Duration(0)
@@ -409,7 +446,9 @@ func (dag *DAG) GetCriticalPath() ([]string, time.Duration, error) {
         earliestStart[nodeID] = maxPredFinish
     }
 
-    // 3. 反向传递 - 计算最晚开始时间
+    // 3. 反向传递 - 计算最晚开始时间 (Latest Start Time)
+    // 算法：LS[i] = min{ LS[j] - duration[i] | j是i的后继节点 }
+    // 从叶子节点开始反向计算，确保总工期不变的情况下最晚可以开始的时间
     latestStart := make(map[string]time.Duration)
     totalDuration := earliestStart[dag.LeafNodes[0]] + nodeDuration[dag.LeafNodes[0]]
 
@@ -426,17 +465,19 @@ func (dag *DAG) GetCriticalPath() ([]string, time.Duration, error) {
     }
 
     // 4. 找出关键路径 - 松弛时间为0的路径
+    // 松弛时间 = LS[i] - ES[i]，为0表示没有延误容忍，是关键路径上的节点
     criticalPath := make([]string, 0)
-    current := dag.RootNodes[0] // 从根节点开始
+    current := dag.RootNodes[0] // 从根节点开始遍历
 
     for {
         criticalPath = append(criticalPath, current)
 
-        // 找到松弛时间为0的后继
+        // 找到松弛时间为0的后继节点，继续关键路径
         var nextNode string
         minSlack := time.Duration(math.MaxInt64)
 
         for _, succ := range dag.GetSuccessors(current) {
+            // 计算松弛时间：后继的最晚开始时间 - 当前的最早完成时间
             slack := latestStart[succ] - earliestStart[current] - nodeDuration[current]
             if slack < minSlack {
                 minSlack = slack
@@ -445,7 +486,7 @@ func (dag *DAG) GetCriticalPath() ([]string, time.Duration, error) {
         }
 
         if minSlack > 0 || nextNode == "" {
-            break // 没有松弛时间为0的后继
+            break // 没有松弛时间为0的后继，关键路径结束
         }
 
         current = nextNode
@@ -482,15 +523,19 @@ type IntelligentDecomposer struct {
     metrics *DecompositionMetrics
 }
 
-/// 分解结果
+/// DecompositionResult 分解结果 - 智能任务分解的输出结构
+/// 包含完整的任务分解信息，用于构建DAG工作流
+/// 质量保证：通过验证器确保分解的完整性和正确性
 type DecompositionResult struct {
-    // 原始任务
+    // 原始任务 - 用户的原始查询或任务描述
     OriginalTask string `json:"original_task"`
 
-    // 分解的子任务
+    // 分解的子任务 - 将复杂任务拆分为可执行的原子单元
+    // 每个子任务都有明确的执行目标、所需资源和成功标准
     SubTasks []SubTask `json:"sub_tasks"`
 
-    // 子任务依赖关系
+    // 子任务依赖关系 - 定义任务间的执行顺序和数据流
+    // 支持数据依赖（前置任务的输出作为后置任务的输入）和控制依赖（执行顺序约束）
     Dependencies []TaskDependency `json:"dependencies"`
 
     // 执行策略建议
@@ -532,6 +577,9 @@ type DecompositionQuality struct {
     OverallScore      float64 `json:"overall_score"`      // 综合评分
 }
 
+/// DecomposeTask 智能任务分解方法 - 在复杂任务需要DAG化时被调用
+/// 调用时机：任务复杂度超过单节点处理能力时，由工作流引擎调用将复杂任务转换为DAG结构
+/// 实现策略：多阶段流水线（理解→匹配→选择→执行→验证），结合机器学习和专家知识，确保分解质量和效率
 func (id *IntelligentDecomposer) DecomposeTask(ctx context.Context, taskInput *TaskInput) (*DecompositionResult, error) {
     startTime := time.Now()
     defer func() {
@@ -571,6 +619,9 @@ func (id *IntelligentDecomposer) DecomposeTask(ctx context.Context, taskInput *T
     return result, nil
 }
 
+/// understandTask 任务理解分析方法 - 在智能分解的第一阶段被调用
+/// 调用时机：接收到用户查询后，首先需要理解任务意图和复杂度，为后续分解提供基础
+/// 实现策略：结构化prompt工程 + LLM推理 + JSON解析 + 验证，确保准确理解用户需求和任务特征
 /// 任务理解 - 使用LLM解析用户意图
 func (id *IntelligentDecomposer) understandTask(ctx context.Context, query string) (*TaskUnderstanding, error) {
     prompt := fmt.Sprintf(`
@@ -608,6 +659,9 @@ func (id *IntelligentDecomposer) understandTask(ctx context.Context, query strin
     return &understanding, nil
 }
 
+/// selectStrategy 分解策略选择方法 - 在任务理解后被调用
+/// 调用时机：获得任务理解结果后，需要选择最适合的分解算法和模式
+/// 实现策略：多策略评分（基于模式匹配度和复杂度适应性）+ 动态选择，确保为不同类型任务选择最优分解方案
 /// 策略选择 - 基于理解结果选择分解策略
 func (id *IntelligentDecomposer) selectStrategy(patterns []TaskPattern, understanding *TaskUnderstanding) DecompositionStrategy {
     // 1. 计算各策略的匹配度
@@ -792,6 +846,9 @@ type ParallelScheduler struct {
     wg       sync.WaitGroup
 }
 
+/// Execute 并行调度器执行方法 - 在DAG准备就绪后被调用
+/// 调用时机：DAG构建完成，需要开始实际的节点调度和执行时，由工作流引擎启动
+/// 实现策略：多goroutine并发模型 + 状态机管理 + 依赖跟踪 + 资源协调，确保高效的DAG并行执行
 /// 调度器执行逻辑
 func (ps *ParallelScheduler) Execute(ctx context.Context) error {
     // 1. 初始化调度状态
@@ -823,44 +880,57 @@ func (ps *ParallelScheduler) Execute(ctx context.Context) error {
     }
 }
 
-/// 调度循环 - 核心调度逻辑
+/// schedulingLoop 调度循环 - 核心调度逻辑，持续监控和调度DAG节点执行
+/// 实现策略：事件驱动的调度循环，结合轮询检查，确保在资源约束下最大化并行执行
+/// 调度算法：贪心策略 + 优先级排序 + 资源感知，避免死锁并优化资源利用率
+///
+/// 循环逻辑：
+/// 1. 查找满足依赖关系的就绪节点
+/// 2. 检查可用执行资源（CPU/内存/并发槽位）
+/// 3. 按优先级和资源要求调度节点执行
+/// 4. 监控执行进度和依赖满足情况
+/// 5. 动态调整调度策略以适应系统负载变化
 func (ps *ParallelScheduler) schedulingLoop(ctx context.Context) {
     defer ps.wg.Done()
 
     for {
         select {
         case <-ps.cancelCh:
-            return
+            return // 收到取消信号，优雅退出
 
         default:
-            // 1. 查找可执行的节点
+            // 1. 查找可执行的节点 - 检查所有依赖已满足的节点
+            // 使用依赖跟踪器快速识别就绪节点，避免每次遍历全图
             readyNodes := ps.findReadyNodes()
 
-            // 2. 资源可用性检查
+            // 2. 资源可用性检查 - 获取当前可用的执行资源槽位
+            // 考虑CPU、内存、I/O带宽等资源约束，确保不会过载
             availableSlots := ps.resourceManager.GetAvailableSlots()
 
-            // 3. 调度节点执行
+            // 3. 调度节点执行 - 贪心调度算法，优先调度高优先级节点
             scheduledCount := 0
             for _, node := range readyNodes {
                 if scheduledCount >= availableSlots {
-                    break
+                    break // 资源不足，停止调度
                 }
 
+                // 检查节点是否可以调度（资源要求检查）
                 if ps.canScheduleNode(node) {
                     if err := ps.scheduleNode(node); err != nil {
                         ps.metrics.RecordSchedulingError(node.ID, err)
-                        continue
+                        continue // 调度失败，继续下一个节点
                     }
-                    scheduledCount++
+                    scheduledCount++ // 成功调度计数
                 }
             }
 
-            // 4. 检查是否执行完成
+            // 4. 检查是否执行完成 - 所有节点都已完成或失败
             if ps.isExecutionComplete() {
-                return
+                return // 执行完成，退出调度循环
             }
 
-            // 5. 等待新节点就绪或超时
+            // 5. 等待新节点就绪或超时 - 防止忙等待消耗CPU
+            // 使用条件变量或定时器实现高效等待
             time.Sleep(100 * time.Millisecond)
         }
     }

@@ -8,6 +8,12 @@
 
 几年前，我们的AI系统与PostgreSQL谈了一场"浪漫的恋爱"：
 
+**这块代码展示了什么？**
+
+这段代码展示了从"浪漫爱情"到"婚姻枷锁"的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
 ```python
 # 恋爱初期：PostgreSQL是完美的选择
 class TaskRepository:
@@ -113,7 +119,25 @@ def save_task_with_monitoring(self, task):
 
 Shannon的数据库抽象层基于一个激进的理念：**业务逻辑不应该知道存储实现**。
 
-```go
+`**这块代码展示了什么？**
+
+这段代码展示了从"浪漫爱情"到"婚姻枷锁"的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
+**这块代码展示了什么？**
+
+这段代码展示了从"浪漫爱情"到"婚姻枷锁"的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
+**这块代码展示了什么？**
+
+这段代码展示了从"浪漫爱情"到"婚姻枷锁"的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
+``go
 // 数据库的"婚姻协议" - 业务逻辑与存储实现的"文明离婚"
 type Storage interface {
     // 任务操作
@@ -174,24 +198,29 @@ Shannon的存储抽象基于**六边形架构**，将业务逻辑置于中心，
 ```go
 // go/orchestrator/internal/storage/core/interface.go
 
-/// 存储接口的完整定义 - AI系统的存储协议
+/// 存储接口的完整定义 - AI系统的统一存储协议和契约
+/// 这个接口是Shannon数据库抽象的核心，它定义了所有存储操作的统一API
+/// 使得业务逻辑与具体的存储实现完全解耦，支持多种存储后端
 type Storage interface {
-    // 核心实体操作
-    TaskStorage
-    SessionStorage
-    AgentStorage
-    EventStorage
-    WorkflowStorage
+    // 核心实体操作 - 按照领域对象组织的存储接口
+    // 每个实体都有独立的接口，便于职责分离和独立演进
+    TaskStorage      // 任务相关的所有存储操作
+    SessionStorage   // 会话管理相关的存储操作
+    AgentStorage     // AI代理状态相关的存储操作
+    EventStorage     // 事件日志相关的存储操作
+    WorkflowStorage  // 工作流编排相关的存储操作
 
-    // 管理操作
-    HealthCheck(ctx context.Context) error
-    Migrate(ctx context.Context, targetVersion string) error
-    Backup(ctx context.Context, destination string) error
-    Restore(ctx context.Context, source string) error
+    // 管理操作 - 存储层的运维和管理功能
+    // 这些是存储实现相关的通用管理接口，不是业务逻辑
+    HealthCheck(ctx context.Context) error                    // 健康检查，确保存储可用性
+    Migrate(ctx context.Context, targetVersion string) error  // 数据库迁移，支持版本升级
+    Backup(ctx context.Context, destination string) error     // 数据备份，支持容灾恢复
+    Restore(ctx context.Context, source string) error         // 数据恢复，从备份还原
 
-    // 监控操作
-    Stats(ctx context.Context) StorageStats
-    Metrics() StorageMetrics
+    // 监控操作 - 存储层的可观测性接口
+    // 提供存储性能和健康状态的量化指标
+    Stats(ctx context.Context) StorageStats    // 当前统计信息，如连接数、操作延迟等
+    Metrics() StorageMetrics                   // Prometheus格式的监控指标
 }
 
 /// 任务存储接口
@@ -1386,29 +1415,52 @@ const (
 数据库连接池采用生产级的配置，支持动态调整和监控：
 
 ```go
-// NewClient：数据库客户端构造函数
+/// NewClient 数据库客户端构造函数 - 在应用启动时被调用
+/// 调用时机：系统初始化阶段，由依赖注入容器或main函数创建数据库客户端实例
+/// 实现策略：多存储后端初始化 + 连接池配置 + 熔断器集成 + 异步组件启动，确保数据库层的可靠性和性能
+/// NewClient 数据库客户端构造函数 - 在应用程序启动时被调用
+/// 调用时机：应用程序启动阶段，在所有业务服务初始化之前，确保数据库连接池和异步组件准备就绪
+/// 实现策略：参数验证 + PostgreSQL和Redis连接初始化 + 熔断器和连接池测试 + 异步组件启动，提供健壮的数据库访问层
+///
+/// 初始化流程：
+/// 1. 验证配置参数的有效性并设置默认值
+/// 2. 建立PostgreSQL主数据库连接（支持关系数据和向量搜索）
+/// 3. 建立Redis缓存连接（支持会话存储和高速缓存）
+/// 4. 配置熔断器防止级联故障
+/// 5. 初始化监控指标收集器和健康检查器
+/// 6. 启动异步写队列和批处理worker
+/// 7. 配置分布式追踪支持
+///
+/// 设计理念：
+/// - 多存储后端统一抽象：业务逻辑通过Client接口访问，不关心底层实现
+/// - 弹性设计：熔断器、连接池、重试机制确保高可用性
+/// - 可观测性：内置指标收集和健康检查，支持生产环境监控
+/// - 异步优化：写操作异步化，提高API响应性能
 func NewClient(config *DatabaseConfig, logger *zap.Logger) (*Client, error) {
-    // 1. 参数验证和默认值设置
+    // 1. 参数验证和默认值设置 - 在初始化之前，对传入的数据库配置参数进行严格的验证，并设置合理的默认值
+    // 防止因配置错误导致系统启动失败或运行时异常，提高系统的健壮性
     if err := validateConfig(config); err != nil {
         return nil, fmt.Errorf("invalid database config: %w", err)
     }
-
     setDefaults(config)
 
-    // 2. 初始化PostgreSQL连接
+    // 2. 初始化PostgreSQL连接 - 根据配置信息初始化PostgreSQL数据库连接，包括连接字符串、连接池大小等
+    // PostgreSQL作为主要的关系型和向量存储，其连接的稳定性和性能对整个系统至关重要
     pgClient, err := initializePostgreSQL(config, logger)
     if err != nil {
         return nil, fmt.Errorf("failed to initialize PostgreSQL: %w", err)
     }
 
-    // 3. 初始化Redis连接
+    // 3. 初始化Redis连接 - 根据配置信息初始化Redis客户端连接，用于缓存、会话和事件流
+    // Redis作为高性能的内存数据库，其连接的可用性直接影响缓存命中率和实时事件处理能力
     redisClient, err := initializeRedis(config, logger)
     if err != nil {
-        pgClient.Close()
+        pgClient.Close() // 清理已创建的PostgreSQL连接
         return nil, fmt.Errorf("failed to initialize Redis: %w", err)
     }
 
-    // 4. 创建熔断器包装器
+    // 4. 创建熔断器包装器 - 为数据库操作创建熔断器实例，用于隔离故障和防止级联效应
+    // 在分布式系统中，外部依赖（如数据库）可能出现瞬时故障，熔断器可以保护系统免受其影响
     circuitConfig := circuitbreaker.Config{
         Enabled:     config.CircuitBreakerEnabled,
         Timeout:     config.CircuitBreakerTimeout,
@@ -1416,22 +1468,24 @@ func NewClient(config *DatabaseConfig, logger *zap.Logger) (*Client, error) {
     }
     dbWrapper := circuitbreaker.NewDatabaseWrapper(pgClient, circuitConfig, logger)
 
-    // 5. 创建客户端实例
+    // 5. 创建客户端实例 - 组装所有组件，创建完整的数据库客户端
+    // Client封装了所有数据库操作，提供统一的访问接口
     client := &Client{
-        db:         dbWrapper,
-        redis:      redisClient,
-        config:     config,
-        metrics:    NewDatabaseMetrics(),
-        health:     NewHealthChecker(dbWrapper, redisClient, logger),
-        writeQueue: make(chan WriteRequest, config.WriteQueueSize),
-        workers:    config.WriteWorkers,
-        batchSize:  config.BatchSize,
-        stopCh:     make(chan struct{}),
-        logger:     logger,
-        tracer:     otel.Tracer("database-client"),
+        db:         dbWrapper,                                   // PostgreSQL连接（带熔断器）
+        redis:      redisClient,                                 // Redis连接
+        config:     config,                                      // 配置信息
+        metrics:    NewDatabaseMetrics(),                       // 性能指标收集器
+        health:     NewHealthChecker(dbWrapper, redisClient, logger), // 健康检查器
+        writeQueue: make(chan WriteRequest, config.WriteQueueSize), // 异步写队列
+        workers:    config.WriteWorkers,                         // 异步worker数量
+        batchSize:  config.BatchSize,                           // 批处理大小
+        stopCh:     make(chan struct{}),                        // 停止信号通道
+        logger:     logger,                                     // 结构化日志
+        tracer:     otel.Tracer("database-client"),            // 分布式追踪
     }
 
-    // 6. 启动异步处理组件
+    // 6. 启动异步处理组件 - 初始化异步写队列的worker goroutines
+    // 异步化写操作可以显著提高API响应性能，避免用户等待数据库I/O
     if err := client.startAsyncComponents(); err != nil {
         client.Close()
         return nil, fmt.Errorf("failed to start async components: %w", err)
@@ -1454,7 +1508,9 @@ func NewClient(config *DatabaseConfig, logger *zap.Logger) (*Client, error) {
     return client, nil
 }
 
-// initializePostgreSQL：PostgreSQL连接初始化
+/// initializePostgreSQL PostgreSQL连接初始化方法 - 在NewClient内部被调用
+/// 调用时机：数据库客户端创建过程中，需要建立PostgreSQL连接池时自动调用
+/// 实现策略：DSN构建 + 连接池配置 + 健康检查 + 参数调优，确保PostgreSQL连接的高效稳定运行
 func initializePostgreSQL(config *DatabaseConfig, logger *zap.Logger) (*sql.DB, error) {
     // 构建DSN（Data Source Name）
     dsn := buildPostgreSQLDSN(config)
@@ -1495,7 +1551,9 @@ func initializePostgreSQL(config *DatabaseConfig, logger *zap.Logger) (*sql.DB, 
     return db, nil
 }
 
-// validateConnectionPool：验证连接池配置的合理性
+/// validateConnectionPool 连接池配置验证方法 - 在PostgreSQL初始化完成后被调用
+/// 调用时机：数据库连接建立后，在正式使用前进行配置合理性检查
+/// 实现策略：参数约束验证 + 连接池压力测试 + 性能基准测试，确保连接池配置的稳定性和性能
 func validateConnectionPool(db *sql.DB, config *DatabaseConfig) error {
     // 检查配置参数的合理性
     if config.MaxConnections < config.IdleConnections {
@@ -1552,7 +1610,9 @@ func performConnectionPoolTest(db *sql.DB, config *DatabaseConfig) error {
     return nil
 }
 
-// initializeRedis：Redis连接初始化
+/// initializeRedis Redis连接初始化方法 - 在NewClient内部被调用
+/// 调用时机：数据库客户端创建过程中，需要建立Redis连接用于缓存和会话存储时自动调用
+/// 实现策略：连接池配置 + 超时参数调优 + 连接健康检查 + 性能监控，确保Redis连接的高可用性和高效性
 func initializeRedis(config *DatabaseConfig, logger *zap.Logger) (*redis.Client, error) {
     client := redis.NewClient(&redis.Options{
         Addr:         config.RedisAddr,
@@ -1588,7 +1648,9 @@ func initializeRedis(config *DatabaseConfig, logger *zap.Logger) (*redis.Client,
     return client, nil
 }
 
-// startAsyncComponents：启动异步处理组件
+/// startAsyncComponents 异步组件启动方法 - 在数据库客户端创建完成后被调用
+/// 调用时机：Client实例创建成功后，在返回客户端实例前启动后台异步处理组件
+/// 实现策略：多goroutine并发启动 + 错误聚合处理 + 优雅关闭协调，确保异步组件的可靠启动和停止
 func (c *Client) startAsyncComponents() error {
     // 启动写入工作者池
     c.startWriteWorkers()
@@ -1602,7 +1664,9 @@ func (c *Client) startAsyncComponents() error {
     return nil
 }
 
-// startWriteWorkers：启动异步写入工作者池
+/// startWriteWorkers 异步写入工作者启动方法 - 在startAsyncComponents内部被调用
+/// 调用时机：异步组件启动过程中，专门负责启动数据库写入的工作者池
+/// 实现策略：工作者goroutine池创建 + 队列处理循环 + 优雅关闭等待，确保写入操作的并发处理和资源控制
 func (c *Client) startWriteWorkers() {
     c.logger.Info("Starting database write workers",
         zap.Int("worker_count", c.workers),

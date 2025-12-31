@@ -8,6 +8,12 @@
 
 几年前，我们的AI代理系统运行在Python上。一切看起来都很美好：
 
+**这块代码展示了什么？**
+
+这段代码展示了Python的"心脏骤停"时刻的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
 ```python
 # Python时代的AI代理 - 看起来很简单
 class AIAgent:
@@ -99,7 +105,25 @@ def unsafe_string_ops(data):
 
 Shannon选择Rust作为Agent Core的实现语言，基于几个深刻的洞察：
 
-```rust
+`**这块代码展示了什么？**
+
+这段代码展示了Python的"心脏骤停"时刻的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
+**这块代码展示了什么？**
+
+这段代码展示了Python的"心脏骤停"时刻的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
+**这块代码展示了什么？**
+
+这段代码展示了Python的"心脏骤停"时刻的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
+``rust
 // Rust Agent Core：确定性性能的保证
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -184,41 +208,70 @@ Rust Agent Core的核心是**Tokio异步运行时**：
 ```rust
 // rust/agent-core/src/core/agent.rs
 
-/// Agent Core的主协调器
+/// Agent Core的主协调器 - Shannon AI代理系统的核心引擎
+/// 设计理念：采用微内核架构，将复杂的AI代理执行分解为职责单一的组件
+/// 核心优势：通过Rust的所有权系统和异步运行时，提供高性能、内存安全、并发安全的AI代理执行环境
+///
+/// 架构原则：
+/// - 组件化：每个功能模块独立演化，职责清晰
+/// - 异步优先：充分利用Tokio运行时的并发优势
+/// - 资源感知：精确控制内存、CPU、网络等资源使用
+/// - 可观测性：内置监控和追踪，支持生产环境运维
+///
+/// 生命周期：
+/// 1. 初始化：验证配置，创建运行时，建立连接
+/// 2. 运行：处理请求，协调组件，监控健康状态
+/// 3. 优雅关闭：完成正在处理的请求，释放资源
 #[derive(Clone)]
 pub struct AgentCore {
-    // 配置管理
+    // ========== 配置管理 ==========
+    // 存储Agent Core的运行时配置，如服务端口、LLM客户端设置、资源限制等
+    // 集中管理所有可配置参数，支持灵活的部署和运行时调整
     config: Arc<Config>,
 
-    // 异步运行时组件
+    // ========== 异步运行时组件 ==========
+    // Tokio运行时，负责调度和执行异步任务，提供高效的并发处理能力
+    // Rust的异步模型是实现高性能、低延迟AI代理的关键，避免了GIL等限制
     runtime: Arc<Runtime>,
 
-    // 请求处理管道
+    // ========== 请求处理管道 ==========
+    // 定义了处理传入请求的各个阶段，例如认证、预处理、LLM调用、工具执行和后处理
+    // 模块化请求处理流程，便于扩展、维护和错误隔离
     request_pipeline: Arc<RequestPipeline>,
 
-    // 资源管理器
+    // ========== 资源管理器 ==========
+    // 负责监控和管理Agent Core的系统资源，如CPU、内存、网络带宽
+    // 确保系统稳定运行，防止资源耗尽，并支持智能的负载均衡和弹性伸缩
     resource_manager: Arc<ResourceManager>,
 
-    // 健康监控
+    // ========== 健康监控 ==========
+    // 持续检查Agent Core及其依赖服务的健康状态，用于服务发现和故障转移
+    // 提供系统的可观测性，确保高可用性，并支持自动化运维
     health_monitor: Arc<HealthMonitor>,
 }
 
 impl AgentCore {
-    /// 创建新的Agent Core实例
+    /// 创建新的Agent Core实例 - 这是整个系统的初始化入口点
+    /// 采用依赖注入和异步初始化的模式，确保所有组件正确配置和连接
     pub async fn new(config: Config) -> Result<Self, AgentError> {
-        // 1. 验证配置
+        // 1. 配置验证 - 在启动前验证所有配置参数的合法性，防止运行时错误
+        // 包括连接字符串、资源限制、超时设置、安全配置等的全量校验
         config.validate()?;
 
-        // 2. 创建Tokio运行时
+        // 2. Tokio运行时创建 - 初始化异步运行时，这是所有异步操作的基础
+        // Tokio运行时管理线程池、定时器、I/O资源，为高并发请求处理提供基础设施
         let runtime = Arc::new(Runtime::new()?);
 
-        // 3. 初始化资源管理器
+        // 3. 资源管理器初始化 - 创建统一的资源管理器，负责连接池、缓存、配额管理
+        // 异步初始化确保外部依赖（如数据库连接）在系统启动前就绪
         let resource_manager = Arc::new(ResourceManager::new(&config).await?);
 
-        // 4. 创建请求处理管道
+        // 4. 请求处理管道创建 - 构建核心的请求处理流水线，包含所有处理阶段
+        // 传入resource_manager引用，支持管道阶段间的资源共享和协调
         let request_pipeline = Arc::new(RequestPipeline::new(&config, resource_manager.clone()).await?);
 
-        // 5. 初始化健康监控
+        // 5. 健康监控初始化 - 创建健康检查组件，持续监控系统各组件的运行状态
+        // 用于故障检测、自动恢复和负载均衡决策
         let health_monitor = Arc::new(HealthMonitor::new(&config));
 
         Ok(Self {
@@ -455,7 +508,9 @@ pub struct MemoryBlock {
 }
 
 impl MemoryPool {
-    /// 创建内存池
+    /// new 内存池构造函数 - 在Agent Core初始化时被调用
+    /// 调用时机：系统启动时创建全局内存池实例，为整个Agent Core提供内存管理服务
+    /// 实现策略：多层级内存块分配（slab分配器）+ 预分配策略 + 统计监控，确保内存分配的高效性和内存碎片的最小化
     pub fn new(total_size: usize) -> Result<Self, MemoryError> {
         // 计算块大小：从小到大
         let block_sizes = vec![
@@ -495,7 +550,9 @@ impl MemoryPool {
         })
     }
 
-    /// 分配内存
+    /// allocate 内存分配方法 - 在每次需要分配内存时被调用
+    /// 调用时机：Agent Core处理请求时需要分配临时缓冲区、字符串存储或其他数据结构时
+    /// 实现策略：最佳适配算法（找到最合适的内存块大小）+ 位图标记 + 线程安全锁，确保分配的高效性和内存不浪费
     pub fn allocate(&self, size: usize) -> Result<MemoryHandle, MemoryError> {
         // 找到合适的块大小
         let block_index = self.find_suitable_block(size)?;
@@ -529,7 +586,9 @@ impl MemoryPool {
         Err(MemoryError::OutOfMemory)
     }
 
-    /// 释放内存
+    /// deallocate 内存释放方法 - 在MemoryHandle生命周期结束时自动调用
+    /// 调用时机：通过RAII模式，当MemoryHandle离开作用域时自动触发，或手动调用drop时执行
+    /// 实现策略：双重释放检查 + 位图重置 + 统计更新 + 线程安全，确保内存管理的正确性和安全性
     pub fn deallocate(&self, handle: MemoryHandle) -> Result<(), MemoryError> {
         let pool = &self.pools[handle.block_index];
         let mut block = pool.lock().unwrap();
@@ -614,7 +673,9 @@ pub struct GlobalLimits {
 }
 
 impl ConcurrencyController {
-    /// 控制请求执行
+    /// control_request 请求并发控制方法 - 在每个请求进入处理管道前被调用
+    /// 调用时机：请求处理管道的第一阶段，对所有进入Agent Core的请求进行并发限制检查
+    /// 实现策略：多层级限制（全局+用户级）+ 信号量许可获取 + 资源预检查，确保系统稳定性并防止单个用户过度占用资源
     pub async fn control_request(&self, request: &Request) -> Result<ExecutionPermit, ConcurrencyError> {
         // 1. 检查全局并发限制
         let global_permit = self.request_semaphore.acquire().await?;
@@ -632,7 +693,9 @@ impl ConcurrencyController {
         })
     }
 
-    /// 获取用户许可
+    /// acquire_user_permit 用户级许可获取方法 - 在control_request内部被调用
+    /// 调用时机：每次请求需要获取用户级并发许可时，由并发控制器内部调用
+    /// 实现策略：懒加载模式（按需创建用户限制器）+ 双重检查锁定 + 信号量限制，确保公平的资源分配和防止用户滥用
     async fn acquire_user_permit(&self, user_id: &str) -> Result<SemaphorePermit, ConcurrencyError> {
         let limiters = self.user_limiters.read().await;
 
@@ -656,7 +719,9 @@ impl ConcurrencyController {
         limiter.acquire().await
     }
 
-    /// 检查资源可用性
+    /// check_resource_availability 资源可用性检查方法 - 在许可获取后被调用
+    /// 调用时机：并发许可获取成功后，在实际开始处理请求前进行资源预检查
+    /// 实现策略：多维度资源监控（内存/CPU/网络）+ 预测性检查 + 早期拒绝，确保系统资源不会被过度使用
     async fn check_resource_availability(&self, request: &Request) -> Result<(), ConcurrencyError> {
         // 检查内存使用
         let memory_usage = self.get_current_memory_usage();
@@ -732,7 +797,9 @@ pub struct MemorySafetyChecker {
 }
 
 impl MemorySafetyChecker {
-    /// 验证内存操作安全
+    /// validate_memory_operation 内存操作安全验证方法 - 在每次内存操作前被调用
+    /// 调用时机：Agent Core执行任何内存相关操作时，由安全控制器拦截并验证
+    /// 实现策略：三层安全检查（借用检查+边界检查+生命周期检查），在编译时和运行时提供双重保障
     pub fn validate_memory_operation(&self, operation: &MemoryOperation) -> Result<(), SafetyError> {
         // 1. 借用检查
         self.borrow_checker.check(operation)?;
@@ -761,6 +828,9 @@ pub enum BorrowState {
 }
 
 impl BorrowChecker {
+    /// check 借用检查方法 - 在内存操作安全验证时被调用
+    /// 调用时机：内存安全检查器的第二阶段，对变量的借用状态进行严格验证
+    /// 实现策略：状态机模式跟踪变量借用状态，防止数据竞争和悬空指针，确保并发安全
     pub fn check(&self, operation: &MemoryOperation) -> Result<(), SafetyError> {
         match operation {
             MemoryOperation::Read(var) => {

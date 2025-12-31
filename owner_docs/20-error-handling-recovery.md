@@ -17,7 +17,13 @@ Shannon的设计哲学恰恰诞生于对这些教训的深刻反思。Shannon没
 ### 传统模式的三大缺陷
 
 1. **被动响应 vs 主动防御**
-   ```go
+   **这块代码展示了什么？**
+
+这段代码展示了传统模式的三大缺陷的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
+```go
    // 传统错误处理：事后补救
    func processRequest(req *Request) error {
        result, err := callExternalAPI(req)
@@ -64,30 +70,45 @@ Shannon的容错设计基于三个核心原则：
 
 Shannon使用`thiserror`宏和Rust的强类型系统实现了全面的错误分类：
 
-```rust
+`**这块代码展示了什么？**
+
+这段代码展示了传统模式的三大缺陷的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
+**这块代码展示了什么？**
+
+这段代码展示了传统模式的三大缺陷的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
+``rust
 // rust/agent-core/src/error.rs
 
 use std::fmt;
 use thiserror::Error;
 
-/// AgentError：代理核心的错误类型枚举
-/// 使用thiserror宏自动实现Display和From trait
+/// AgentError：代理核心的统一错误类型枚举
+/// 通过thiserror宏自动生成Display trait实现，提供结构化和可读的错误信息
+/// 每个变体都携带特定的上下文信息，便于错误分类和处理策略选择
 #[derive(Error, Debug)]
 pub enum AgentError {
-    /// 工具执行错误：携带工具名和具体原因
+    /// 工具执行错误：当WASI沙箱中的工具执行失败时使用
+    /// 包含工具名称、失败原因和可选的调试上下文，方便问题定位
     #[error("Tool '{name}' execution failed: {reason}")]
     ToolExecutionFailed {
-        name: String,
-        reason: String,
-        /// 可选的上下文信息，用于调试
-        context: Option<String>,
+        name: String,           // 工具名称，如"code_execution", "web_search"
+        reason: String,         // 具体的失败原因，如"timeout", "resource_limit"
+        /// 可选的上下文信息，用于调试和错误分析
+        context: Option<String>, // 可能包含栈跟踪、输入参数摘要等
     },
 
-    /// LLM服务错误：响应解析失败
+    /// LLM服务错误：当LLM API响应无法解析时使用
+    /// 保留原始响应数据，便于调试和错误恢复
     #[error("Failed to parse LLM response: {source}")]
     LlmResponseParseError {
-        source: serde_json::Error,
-        raw_response: String,
+        source: serde_json::Error,  // JSON解析错误的具体信息
+        raw_response: String,       // 原始响应文本，用于手动检查和重试
     },
 
     /// 配置错误：配置加载或验证失败
@@ -195,22 +216,66 @@ pub trait ErrorCategory {
     fn severity(&self) -> ErrorSeverity;
 }
 
+/// ErrorCategoryType 错误分类枚举 - 定义错误类型及其处理策略
+/// 设计理念：将错误从"是什么"扩展到"如何处理"，实现智能化的错误恢复
+/// 分类依据：错误的根本原因、可恢复性和业务影响程度
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ErrorCategoryType {
-    Network,      // 网络相关，可重试
-    Validation,   // 输入验证，不可重试
-    Resource,     // 资源限制，可重试（带退避）
-    Internal,     // 内部错误，不可重试
-    Timeout,      // 超时，可重试（有限次数）
-    Configuration, // 配置错误，不可重试
+    /// 网络相关错误：连接失败、DNS解析、服务不可用等
+    /// 处理策略：可重试（带指数退避），可能触发熔断器
+    /// 恢复预期：通常在数秒到数分钟内恢复
+    Network,
+
+    /// 输入验证错误：参数格式错误、业务规则违反等
+    /// 处理策略：不可重试，直接返回客户端错误
+    /// 恢复预期：需要客户端修复输入，不涉及服务端恢复
+    Validation,
+
+    /// 资源限制错误：内存不足、CPU过载、配额超限等
+    /// 处理策略：可重试（带较长退避），可能触发负载均衡
+    /// 恢复预期：需要资源释放或扩容，恢复时间不确定
+    Resource,
+
+    /// 内部逻辑错误：代码bug、数据不一致、算法错误等
+    /// 处理策略：不可重试，记录详细错误日志，需要人工干预
+    /// 恢复预期：需要代码修复或数据修复，通常需要开发团队介入
+    Internal,
+
+    /// 超时错误：请求处理时间超过限制
+    /// 处理策略：可重试（有限次数），可能降级处理
+    /// 恢复预期：可能是临时负载过高，自动恢复；也可能是根本性性能问题
+    Timeout,
+
+    /// 配置错误：配置缺失、格式错误、参数无效等
+    /// 处理策略：不可重试，记录配置问题，需要配置修复
+    /// 恢复预期：需要配置文件修改或环境变量调整
+    Configuration,
 }
 
+/// ErrorSeverity 错误严重程度枚举 - 定义错误的业务影响和响应优先级
+/// 设计理念：基于错误对用户体验和业务连续性的影响程度进行分级
+/// 影响因素：功能可用性、数据完整性、经济损失、安全风险
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ErrorSeverity {
-    Low,      // 低优先级，不影响主要功能
-    Medium,   // 中等优先级，影响部分功能
-    High,     // 高优先级，影响关键功能
-    Critical, // 严重级别，系统级故障
+    /// 低优先级：不影响主要功能，可能是边缘功能或非关键路径
+    /// 响应策略：记录日志，可选告警，不影响系统整体可用性
+    /// 示例：某些统计功能的轻微错误、调试信息的丢失
+    Low,
+
+    /// 中等优先级：影响部分功能，但不影响核心业务流程
+    /// 响应策略：记录详细日志，发送告警，可用性降级但仍能提供服务
+    /// 示例：某个非核心API超时、部分数据源不可用但有备用方案
+    Medium,
+
+    /// 高优先级：影响关键功能，可能导致显著的用户体验下降
+    /// 响应策略：立即告警，触发自动恢复，可能启用降级模式
+    /// 示例：主要API不可用、核心数据处理失败、关键资源耗尽
+    High,
+
+    /// 严重级别：系统级故障，可能导致服务完全不可用或数据丢失
+    /// 响应策略：紧急告警、立即人工干预、可能触发服务熔断
+    /// 示例：数据库连接完全丢失、核心组件崩溃、安全漏洞被利用
+    Critical,
 }
 
 impl ErrorCategory for AgentError {
@@ -369,6 +434,9 @@ const (
     SeverityCritical
 )
 
+/// String 严重程度字符串转换方法 - 在错误序列化和日志输出时被调用
+/// 调用时机：错误信息需要转换为人类可读字符串时，由fmt包或日志系统自动调用
+/// 实现策略：枚举值到字符串的映射转换，提供标准化的严重程度表示
 func (s SeverityLevel) String() string {
     switch s {
     case SeverityLow:
@@ -384,6 +452,9 @@ func (s SeverityLevel) String() string {
     }
 }
 
+/// Error 错误字符串格式化方法 - 在错误被转换为字符串时自动调用
+/// 调用时机：fmt.Printf、log.Printf等格式化函数需要错误信息时，由Go错误接口自动调用
+/// 实现策略：结构化信息组合（代码+消息+原因），提供一致的错误输出格式
 // Error：实现error接口
 func (e *StructuredError) Error() string {
     if e.Cause != nil {
@@ -392,11 +463,17 @@ func (e *StructuredError) Error() string {
     return fmt.Sprintf("[%s] %s", e.Code, e.Message)
 }
 
+/// Unwrap 错误解包方法 - 在errors.Is和errors.As函数中被调用
+/// 调用时机：Go 1.13+的错误检查函数需要访问底层错误时，自动调用此方法
+/// 实现策略：返回包装错误的根本原因，支持错误链的遍历和类型断言
 // Unwrap：支持errors.Is和errors.As
 func (e *StructuredError) Unwrap() error {
     return e.Cause
 }
 
+/// WithField 链式错误字段添加方法 - 在构建错误上下文时被调用
+/// 调用时机：错误处理代码需要添加额外调试信息时，通过链式调用逐步完善错误信息
+/// 实现策略：返回自身引用支持链式调用，延迟初始化Details映射，避免不必要的内存分配
 // WithField：链式添加错误字段
 func (e *StructuredError) WithField(key string, value interface{}) *StructuredError {
     if e.Details == nil {
@@ -406,6 +483,9 @@ func (e *StructuredError) WithField(key string, value interface{}) *StructuredEr
     return e
 }
 
+/// WithCause 链式底层原因设置方法 - 在包装现有错误时被调用
+/// 调用时机：捕获到原始错误后，需要添加上下文信息时，通过链式调用设置根本原因
+/// 实现策略：返回自身引用支持链式调用，存储原始错误用于错误链追踪和调试
 // WithCause：链式设置底层原因
 func (e *StructuredError) WithCause(cause error) *StructuredError {
     e.Cause = cause
@@ -413,16 +493,32 @@ func (e *StructuredError) WithCause(cause error) *StructuredError {
 }
 
 // NewStructuredError：创建结构化错误
+/// NewStructuredError 结构化错误构造函数 - 在业务逻辑中遇到错误时被调用
+/// 调用时机：任何业务操作失败时，由错误处理逻辑调用，创建标准化的错误对象便于追踪和处理
+/// 实现策略：错误代码标准化 + 严重程度分级 + 时间戳记录 + 详细信息预分配，确保错误信息的完整性和可追溯性
+///
+/// 参数说明：
+/// - code: 错误代码，用于错误分类和国际化（如"VALIDATION_ERROR"、"NETWORK_TIMEOUT"）
+/// - message: 人类可读的错误描述，用于日志和用户界面显示
+/// - severity: 错误严重程度，影响告警级别和处理优先级
+///
+/// 返回值：
+/// - 预初始化Details映射，支持后续链式添加调试信息
+/// - 自动记录错误发生时间戳，便于问题排查和SLA计算
+/// - 实现error接口，支持标准Go错误处理模式
 func NewStructuredError(code, message string, severity SeverityLevel) *StructuredError {
     return &StructuredError{
-        Code:      code,
-        Message:   message,
-        Severity:  severity,
-        Timestamp: time.Now(),
-        Details:   make(map[string]interface{}),
+        Code:      code,                    // 标准化错误代码，便于监控和国际化
+        Message:   message,                 // 人类可读的错误描述
+        Severity:  severity,                // 严重程度，影响处理策略
+        Timestamp: time.Now(),              // 错误发生时间，便于追踪和分析
+        Details:   make(map[string]interface{}), // 预分配详细信息映射，支持扩展调试信息
     }
 }
 
+/// NewValidationError 验证错误构造函数 - 在输入数据验证失败时被调用
+/// 调用时机：业务逻辑中的数据验证失败时，由验证函数调用，创建标准化的验证错误
+/// 实现策略：预设错误代码和严重程度，自动填充字段信息，便于错误分类和处理
 // 预定义错误构造函数
 func NewValidationError(field, message string) *StructuredError {
     return NewStructuredError("VALIDATION_ERROR", fmt.Sprintf("validation failed for field '%s': %s", field, message), SeverityLow).

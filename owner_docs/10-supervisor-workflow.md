@@ -8,6 +8,12 @@
 
 几年前，我们对GPT-4寄予厚望，认为它能解决一切问题。但现实很快给了我们当头一棒：
 
+**这块代码展示了什么？**
+
+这段代码展示了GPT-4的"上帝视角"幻觉的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
 ```python
 # GPT-4的"上帝视角"尝试
 response = openai.ChatCompletion.create(
@@ -46,29 +52,48 @@ Shannon的监督者工作流正是要重现这种人类协作模式。
 
 监督者工作流的核心是**角色化代理系统**：
 
-```go
+`**这块代码展示了什么？**
+
+这段代码展示了GPT-4的"上帝视角"幻觉的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
+**这块代码展示了什么？**
+
+这段代码展示了GPT-4的"上帝视角"幻觉的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
+**这块代码展示了什么？**
+
+这段代码展示了GPT-4的"上帝视角"幻觉的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
+``go
 // go/orchestrator/internal/workflows/supervisor/roles.go
 
-/// 代理角色定义 - 仿照人类社会分工
+/// AgentRole 代理角色定义 - 仿照人类社会分工的专业化代理模板
+/// 设计理念：通过角色化设计，将复杂的AI任务分解为可管理的专业化单元
+/// 作用：定义代理的能力边界、协作模式和资源需求，为多代理协作提供标准化框架
 type AgentRole struct {
-    Name         string
-    Description  string
+    // ========== 基本信息 ==========
+    Name         string  // 角色名称，如"supervisor", "researcher", "analyst"
+    Description  string  // 角色描述，说明该角色的主要职责和价值
 
-    // 核心能力
-    PrimarySkills    []string  // 主要技能
-    SecondarySkills  []string  // 次要技能
+    // ========== 能力模型 ==========
+    PrimarySkills    []string  // 主要技能：该角色最核心的能力，如task_decomposition, quality_assurance
+    SecondarySkills  []string  // 次要技能：辅助能力，支持主要技能的发挥
 
-    // 知识领域
-    ExpertiseDomains []string  // 专业领域
+    // ========== 知识体系 ==========
+    ExpertiseDomains []string  // 专业领域：该角色擅长的知识领域，如statistics, project_management
 
-    // 协作偏好
-    CollaborationStyle CollaborationStyle
+    // ========== 协作特性 ==========
+    CollaborationStyle CollaborationStyle  // 协作风格：orchestrator, independent, collaborative, consultative, evaluative
+    DecisionStyle      DecisionStyle       // 决策风格：consensus_driven, evidence_based, analytical, expert_driven, critical
 
-    // 决策风格
-    DecisionStyle      DecisionStyle
-
-    // 资源需求
-    ResourceProfile    ResourceProfile
+    // ========== 资源特征 ==========
+    ResourceProfile    ResourceProfile     // 资源需求：CPU、内存、网络等资源配置模板
 }
 
 /// 预定义角色配置
@@ -186,26 +211,68 @@ var PredefinedRoles = map[string]AgentRole{
     },
 }
 
-/// 协作风格枚举
+/// CollaborationStyle 协作风格枚举 - 定义代理在团队协作中的行为模式
+/// 影响因素：任务复杂度、代理专业性、沟通效率
+/// 选择依据：根据任务类型和团队组成动态匹配最优协作模式
 type CollaborationStyle string
 
 const (
-    CollaborationStyleOrchestrator  CollaborationStyle = "orchestrator"   // 协调者：管理整个过程
-    CollaborationStyleIndependent   CollaborationStyle = "independent"    // 独立工作者：自主完成任务
-    CollaborationStyleCollaborative CollaborationStyle = "collaborative"  // 协作型：喜欢与他人合作
-    CollaborationStyleConsultative  CollaborationStyle = "consultative"   // 咨询型：提供专业意见
-    CollaborationStyleEvaluative    CollaborationStyle = "evaluative"     // 评估型：检查和改进质量
+    // 协调者：管理整个过程，负责任务分配、进度跟踪、质量控制
+    // 适用场景：复杂项目管理、跨部门协作、需要统一指挥的任务
+    // 资源特点：需要全局视野，适合supervisor角色
+    CollaborationStyleOrchestrator  CollaborationStyle = "orchestrator"
+
+    // 独立工作者：自主完成任务，最小化与其他代理的交互
+    // 适用场景：标准化任务、专业领域深度分析、创造性工作
+    // 资源特点：高专注度，低沟通开销，适合researcher角色
+    CollaborationStyleIndependent   CollaborationStyle = "independent"
+
+    // 协作型：喜欢与他人合作，通过讨论和交流提升质量
+    // 适用场景：创新任务、需要brainstorming的分析工作、多角度评估
+    // 资源特点：高交互频率，适合analyst角色
+    CollaborationStyleCollaborative CollaborationStyle = "collaborative"
+
+    // 咨询型：提供专业意见，在关键节点参与决策
+    // 适用场景：专家咨询、质量把关、风险评估
+    // 资源特点：按需参与，适合specialist角色
+    CollaborationStyleConsultative  CollaborationStyle = "consultative"
+
+    // 评估型：检查和改进质量，提供反馈和建议
+    // 适用场景：质量保证、持续改进、标准制定
+    // 资源特点：后置参与，适合reviewer角色
+    CollaborationStyleEvaluative    CollaborationStyle = "evaluative"
 )
 
-/// 决策风格枚举
+/// DecisionStyle 决策风格枚举 - 定义代理在决策过程中的思维模式
+/// 影响因素：任务不确定性、时间压力、决策后果严重性
+/// 选择依据：根据决策复杂度、时间要求和风险水平选择合适的决策风格
 type DecisionStyle string
 
 const (
-    DecisionStyleConsensusDriven DecisionStyle = "consensus_driven" // 共识驱动：寻求各方同意
-    DecisionStyleEvidenceBased   DecisionStyle = "evidence_based"   // 证据驱动：基于数据决策
-    DecisionStyleAnalytical      DecisionStyle = "analytical"       // 分析驱动：深入分析后决策
-    DecisionStyleExpertDriven    DecisionStyle = "expert_driven"    // 专家驱动：依赖专业判断
-    DecisionStyleCritical        DecisionStyle = "critical"         // 批判驱动：质疑和验证
+    // 共识驱动：寻求各方同意，通过民主讨论达成一致
+    // 适用场景：战略决策、组织变革、高风险决策
+    // 优点：获得广泛支持，缺点：决策缓慢
+    DecisionStyleConsensusDriven DecisionStyle = "consensus_driven"
+
+    // 证据驱动：基于数据和事实进行决策，重视实证支持
+    // 适用场景：技术选型、性能优化、数据驱动的业务决策
+    // 优点：客观理性，缺点：可能忽略直觉和经验
+    DecisionStyleEvidenceBased   DecisionStyle = "evidence_based"
+
+    // 分析驱动：深入分析所有选项，全面评估利弊
+    // 适用场景：复杂问题分析、投资决策、系统设计
+    // 优点：全面 thorough，缺点：耗时较长
+    DecisionStyleAnalytical      DecisionStyle = "analytical"
+
+    // 专家驱动：依赖专业判断和领域经验快速决策
+    // 适用场景：紧急情况、标准化问题、专业领域决策
+    // 优点：高效快捷，缺点：可能主观片面
+    DecisionStyleExpertDriven    DecisionStyle = "expert_driven"
+
+    // 批判驱动：质疑和验证所有假设，寻找潜在风险
+    // 适用场景：安全审计、风险评估、质量控制
+    // 优点：谨慎保守，缺点：决策过于谨慎
+    DecisionStyleCritical        DecisionStyle = "critical"
 )
 ```
 
@@ -216,30 +283,32 @@ const (
 ```go
 // go/orchestrator/internal/workflows/supervisor/communication.go
 
-/// 代理间通信协议
+/// AgentMessage 代理间通信协议 - 多代理协作的核心消息格式
+/// 设计理念：标准化消息格式，支持复杂的协作模式和异步通信
+/// 支持模式：单播、广播、请求-响应、发布-订阅
 type AgentMessage struct {
-    // 消息标识
-    MessageID   string    `json:"message_id"`
-    SenderID    string    `json:"sender_id"`
-    ReceiverID  string    `json:"receiver_id,omitempty"` // 空表示广播
-    Timestamp   time.Time `json:"timestamp"`
+    // ========== 消息标识 - 唯一性和追踪性 ==========
+    MessageID   string    `json:"message_id"`     // 全局唯一消息ID，用于去重和追踪
+    SenderID    string    `json:"sender_id"`      // 发送者代理ID
+    ReceiverID  string    `json:"receiver_id,omitempty"` // 接收者代理ID，空值表示广播
+    Timestamp   time.Time `json:"timestamp"`      // 消息创建时间戳，用于时序排序
 
-    // 消息类型
-    MessageType MessageType `json:"message_type"`
+    // ========== 消息分类 - 类型和优先级 ==========
+    MessageType MessageType `json:"message_type"` // 消息类型：task_assignment, question, feedback等
 
-    // 消息内容
-    Subject     string                 `json:"subject"`
-    Content     string                 `json:"content"`
-    Attachments []MessageAttachment    `json:"attachments,omitempty"`
+    // ========== 消息内容 - 主体和附件 ==========
+    Subject     string                 `json:"subject"`              // 消息主题，简短描述
+    Content     string                 `json:"content"`              // 消息正文，详细内容
+    Attachments []MessageAttachment    `json:"attachments,omitempty"` // 附件：文件、数据、引用等
 
-    // 上下文信息
-    ConversationID string    `json:"conversation_id,omitempty"`
-    InReplyTo     string    `json:"in_reply_to,omitempty"`     // 回复消息ID
+    // ========== 对话上下文 - 会话追踪 ==========
+    ConversationID string    `json:"conversation_id,omitempty"` // 会话ID，关联相关消息
+    InReplyTo     string    `json:"in_reply_to,omitempty"`     // 回复消息ID，支持线程化对话
 
-    // 元数据
-    Priority      MessagePriority      `json:"priority"`
-    TTL          time.Duration        `json:"ttl,omitempty"`          // 生存时间
-    Metadata      map[string]interface{} `json:"metadata,omitempty"`
+    // ========== 消息控制 - 优先级和生命周期 ==========
+    Priority      MessagePriority      `json:"priority"`               // 消息优先级：low, normal, high, urgent
+    TTL          time.Duration        `json:"ttl,omitempty"`          // 生存时间，过期自动丢弃
+    Metadata      map[string]interface{} `json:"metadata,omitempty"`   // 扩展元数据，支持自定义属性
 }
 
 /// 消息类型枚举
@@ -304,6 +373,9 @@ type AgentMailbox struct {
     LastActivity     time.Time
 }
 
+/// SendMessage 代理间消息发送方法 - 在工作流执行过程中被频繁调用
+/// 调用时机：代理需要与其他代理通信时，由消息发送方调用，支持同步和异步的消息传递
+/// 实现策略：消息路由 + 优先级队列 + 持久化存储，确保消息可靠传递和高性能处理
 func (ms *MailboxSystem) SendMessage(msg *AgentMessage) error {
     // 1. 路由消息
     targets := ms.router.RouteMessage(msg)
@@ -327,6 +399,9 @@ func (ms *MailboxSystem) SendMessage(msg *AgentMessage) error {
     return nil
 }
 
+/// Enqueue 代理邮箱入队方法 - 在发送消息给代理时被调用
+/// 调用时机：其他代理或系统组件需要向特定代理发送消息时，通过邮箱系统入队等待处理
+/// 实现策略：非阻塞入队 + 容量检查 + 溢出策略处理，确保消息传递的可靠性和系统稳定性
 func (mb *AgentMailbox) Enqueue(msg *AgentMessage) error {
     select {
     case mb.Queue <- msg:
@@ -338,6 +413,9 @@ func (mb *AgentMailbox) Enqueue(msg *AgentMessage) error {
     }
 }
 
+/// Dequeue 代理邮箱出队方法 - 在代理处理消息循环中被持续调用
+/// 调用时机：代理主循环中周期性尝试获取待处理消息，支持超时控制避免无限阻塞
+/// 实现策略：超时选择器模式 + 消息计数统计 + 优雅超时处理，确保代理响应性和资源利用率
 func (mb *AgentMailbox) Dequeue(timeout time.Duration) (*AgentMessage, error) {
     select {
     case msg := <-mb.Queue:
@@ -395,6 +473,9 @@ type HierarchicalDecomposition struct {
     specializationThreshold float64
 }
 
+/// Decompose 层次化任务分解方法 - 在监督者接收复杂任务时被调用
+/// 调用时机：复杂任务需要多代理协作时，由监督者调用此方法将大任务分解为可管理的子任务
+/// 实现策略：复杂度分析 + 最优深度计算 + 递归分解 + 依赖关系构建，确保任务分解的合理性和可执行性
 func (hd *HierarchicalDecomposition) Decompose(task *Task) (*DecompositionResult, error) {
     result := &DecompositionResult{
         OriginalTask: task,
@@ -458,6 +539,9 @@ func (hd *HierarchicalDecomposition) decomposeRecursively(
     }
 }
 
+/// generateSubTasks 智能子任务生成方法 - 在层次化分解过程中被递归调用
+/// 调用时机：父任务复杂度超过阈值时，由decomposeRecursively方法调用生成下一级子任务
+/// 实现策略：领域模式匹配 + 模板实例化 + 技能需求推导，确保生成的子任务既有针对性又可独立执行
 /// 智能子任务生成
 func (hd *HierarchicalDecomposition) generateSubTasks(parent *SubTask) []*SubTask {
     // 1. 基于领域知识生成子任务
@@ -566,26 +650,46 @@ type MajorityVotingStrategy struct {
     majorityThreshold float64 // 多数阈值
 }
 
+/// ReachConsensus 多数投票共识达成方法 - 在代理协作决策阶段被调用
+/// 调用时机：多个代理对同一问题提出意见后，需要通过投票方式确定最终决策
+/// 实现策略：参与率验证 + 意见统计 + 多数阈值判断 + 置信度加权，确保决策的民主性和代表性
+/// ReachConsensus 多数投票共识达成方法 - 在代理协作决策阶段被调用
+/// 调用时机：多个代理对同一问题提出意见后，需要通过投票方式确定最终决策
+/// 实现策略：参与率验证 + 意见统计 + 多数阈值判断 + 置信度加权，确保决策的民主性和代表性
+///
+/// 算法流程：
+/// 1. 验证参与率是否满足最低要求（防止少数人决策）
+/// 2. 统计各意见的得票数和平均置信度
+/// 3. 识别多数意见（得票最多的选项）
+/// 4. 计算共识水平 = 多数票比例 × 平均置信度
+/// 5. 比较共识水平与所需阈值，决定是否达成共识
+///
+/// 共识水平计算：
+/// - 多数票比例：多数意见的票数占总票数的比例
+/// - 平均置信度：所有参与者对各自意见的平均置信度
+/// - 最终共识水平：两者的乘积，确保既民主又可信
 func (mvs *MajorityVotingStrategy) ReachConsensus(decision *CollaborativeDecision) (*ConsensusResult, error) {
-    // 1. 检查参与率
+    // 1. 检查参与率 - 确保足够多的代理参与决策
+    // 参与率 = 实际提交意见的数量 / 邀请参与的总数量
     participationRate := float64(len(decision.Opinions)) / float64(len(decision.Participants))
     if participationRate < mvs.minParticipation {
+        // 参与率不足，需要人工调解或扩大参与范围
         return &ConsensusResult{
             ConsensusLevel: 0.0,
             MediationNeeded: true,
         }, ErrInsufficientParticipation
     }
 
-    // 2. 统计意见分布
-    opinionCounts := make(map[string]int)
-    totalConfidence := 0.0
+    // 2. 统计意见分布 - 收集各意见的得票情况和置信度
+    opinionCounts := make(map[string]int)      // 意见 -> 得票数
+    totalConfidence := 0.0                     // 累加所有意见的置信度
 
     for _, opinion := range decision.Opinions {
-        opinionCounts[opinion.Opinion]++
-        totalConfidence += opinion.Confidence
+        opinionCounts[opinion.Opinion]++         // 统计得票
+        totalConfidence += opinion.Confidence    // 累加置信度
     }
 
-    // 3. 找到多数意见
+    // 3. 找到多数意见 - 得票数最多的意见
     var majorityOpinion string
     maxCount := 0
 
@@ -596,14 +700,17 @@ func (mvs *MajorityVotingStrategy) ReachConsensus(decision *CollaborativeDecisio
         }
     }
 
-    // 4. 计算共识水平
-    majorityRatio := float64(maxCount) / float64(len(decision.Opinions))
-    avgConfidence := totalConfidence / float64(len(decision.Opinions))
+    // 4. 计算共识水平 - 结合多数票比例和平均置信度
+    majorityRatio := float64(maxCount) / float64(len(decision.Opinions))  // 多数票比例
+    avgConfidence := totalConfidence / float64(len(decision.Opinions))   // 平均置信度
 
+    // 共识水平 = 多数票比例 × 平均置信度
+    // 这个公式确保决策既在数量上占优，又在质量上可信
     consensusLevel := majorityRatio * avgConfidence
 
-    // 5. 判断是否达成共识
+    // 5. 判断是否达成共识 - 比较计算出的共识水平与所需阈值
     if consensusLevel >= decision.RequiredConsensus {
+        // 共识达成，返回多数意见作为最终决策
         return &ConsensusResult{
             DecisionID:     decision.DecisionID,
             ConsensusLevel: consensusLevel,
@@ -612,7 +719,7 @@ func (mvs *MajorityVotingStrategy) ReachConsensus(decision *CollaborativeDecisio
         }, nil
     }
 
-    // 6. 需要调解
+    // 6. 需要调解 - 共识水平不足，需要人工干预或进一步讨论
     return &ConsensusResult{
         ConsensusLevel: consensusLevel,
         MediationNeeded: true,
@@ -628,6 +735,9 @@ type WeightedConsensusStrategy struct {
     weightCalculator *AgentWeightCalculator
 }
 
+/// ReachConsensus 加权共识达成方法 - 在需要考虑代理专业性的决策中被调用
+/// 调用时机：复杂领域问题需要专家意见时，使用加权策略确保高专业性代理的意见有更大影响力
+/// 实现策略：动态权重计算（基于专业性和历史表现）+ 加权统计 + 阈值判断，确保决策质量和公平性
 func (wcs *WeightedConsensusStrategy) ReachConsensus(decision *CollaborativeDecision) (*ConsensusResult, error) {
     // 1. 计算每个代理的权重
     weights := make(map[string]float64)
@@ -694,6 +804,9 @@ type AgentWeightCalculator struct {
     domainRelevance map[string][]string // topic -> relevant_domains
 }
 
+/// CalculateWeight 代理权重计算方法 - 在加权共识策略中被循环调用
+/// 调用时机：每次需要评估代理在特定主题上的影响力时，由共识策略调用计算动态权重
+/// 实现策略：多因子权重计算（专业性+历史表现+领域相关性）+ 归一化处理，确保权重合理且可比
 func (awc *AgentWeightCalculator) CalculateWeight(agentID, topic string) float64 {
     baseWeight := 1.0
 
@@ -768,6 +881,9 @@ type Reviewer struct {
     Reliability float64 // 可靠性评分
 }
 
+/// ExecuteReview 质量评审执行方法 - 在工作流完成后被调用
+/// 调用时机：监督者工作流执行完毕后，自动触发质量保证流程评估最终输出质量
+/// 实现策略：多轮评审流程 + 专家分配 + 准则打分 + 迭代改进，确保工作质量达到标准要求
 /// 评审执行流程
 func (qas *QualityAssuranceSystem) ExecuteReview(workflowID string) (*ReviewResult, error) {
     workflow := qas.reviewWorkflows[workflowID]

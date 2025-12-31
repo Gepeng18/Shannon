@@ -8,7 +8,13 @@
 
 几年前，我们的AI系统开始支持代码执行功能。起初，这是一个激动人心的功能：
 
-```python
+`**这块代码展示了什么？**
+
+这段代码展示了AI的"特洛伊木马"危机的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
+``python
 # AI代码执行的美好愿景
 ai_response = ai.generate_code_solution("帮我分析这个CSV文件并画图")
 
@@ -97,7 +103,13 @@ def infinite_loop():
 
 Shannon的WASI沙箱创造了一个奇迹：**让代码既能执行又不能搞破坏**。
 
-```go
+`**这块代码展示了什么？**
+
+这段代码展示了AI的"特洛伊木马"危机的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
+``go
 // WASI沙箱：安全与功能的完美平衡
 type WASISandbox struct {
     // 安全边界 - 代码无法逃脱
@@ -110,6 +122,9 @@ type WASISandbox struct {
     resourceController *ResourceController
 }
 
+/// ExecuteSecurely WASI沙箱执行方法 - 在AI工具调用时被同步调用
+/// 调用时机：用户任务需要执行代码工具时，由工具执行引擎调用，确保代码在安全隔离环境中运行
+/// 实现策略：多层验证 + 资源配额 + 系统调用拦截，提供操作系统级的安全保证
 func (ws *WASISandbox) ExecuteSecurely(code string) (*ExecutionResult, error) {
     // 代码在沙箱中自由执行
     // 却永远无法访问外部世界
@@ -129,7 +144,25 @@ func (ws *WASISandbox) ExecuteSecurely(code string) (*ExecutionResult, error) {
 
 为什么Shannon选择WebAssembly而不是Docker或JVM？
 
-```rust
+`**这块代码展示了什么？**
+
+这段代码展示了AI的"特洛伊木马"危机的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
+**这块代码展示了什么？**
+
+这段代码展示了AI的"特洛伊木马"危机的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
+**这块代码展示了什么？**
+
+这段代码展示了AI的"特洛伊木马"危机的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
+``rust
 // rust/agent-core/src/wasi/sandbox.rs
 
 /// WASI沙箱的核心架构
@@ -151,30 +184,45 @@ pub struct WASISandbox {
     monitor: SandboxMonitor,
 }
 
-/// 安全配置 - 最小权限原则
+/// SecurityConfig WASI沙箱安全配置 - 实现最小权限原则的安全策略
+/// 设计理念：默认拒绝所有操作，只允许明确授权的功能
+/// 安全层次：内存隔离、CPU限制、文件系统控制、网络过滤、系统调用拦截
+///
+/// 最小权限原则：
+/// - 内存：限制为最小必要大小，防止内存耗尽攻击
+/// - CPU：使用燃料系统精确控制执行时间，防止无限循环
+/// - 文件：只允许访问预定义的白名单路径
+/// - 网络：默认禁用，只允许安全的内部通信
+/// - 系统调用：拦截并验证所有系统级操作
 #[derive(Clone, Debug)]
 pub struct SecurityConfig {
-    // 内存安全
-    pub max_memory_pages: u32,        // 最大内存页数 (64KB每页)
-    pub stack_size_limit: usize,      // 栈大小限制
+    // ========== 内存安全配置 ==========
+    // 防止内存耗尽攻击和缓冲区溢出
+    pub max_memory_pages: u32,        // 最大内存页数（64KB每页），默认64页（4MB）
+    pub stack_size_limit: usize,      // 栈大小限制，防止栈溢出攻击，默认1MB
 
-    // CPU安全
-    pub fuel_limit: u64,              // CPU指令燃料上限
-    pub execution_timeout_ms: u64,    // 执行超时
+    // ========== CPU安全配置 ==========
+    // 防止CPU耗尽和拒绝服务攻击
+    pub fuel_limit: u64,              // CPU指令燃料上限，执行完燃料后强制停止，默认10^6指令
+    pub execution_timeout_ms: u64,    // 最大执行时间（毫秒），超时后终止，默认5000ms
 
-    // 文件系统安全
-    pub allowed_paths: Vec<PathBuf>,  // 白名单路径
-    pub read_only_paths: Vec<PathBuf>, // 只读路径
+    // ========== 文件系统安全配置 ==========
+    // 实现文件访问的精确控制
+    pub allowed_paths: Vec<PathBuf>,  // 可访问的文件路径白名单，默认只允许临时目录
+    pub read_only_paths: Vec<PathBuf>, // 只读路径列表，防止数据篡改，默认包含系统库
 
-    // 网络安全
-    pub allow_network: bool,          // 是否允许网络访问
-    pub allowed_hosts: Vec<String>,   // 允许的网络主机
+    // ========== 网络安全配置 ==========
+    // 防止外部通信和数据泄露
+    pub allow_network: bool,          // 是否允许网络访问，默认false
+    pub allowed_hosts: Vec<String>,   // 允许连接的主机列表，仅在allow_network=true时有效
 
-    // 环境变量安全
-    pub allowed_env_vars: Vec<String>, // 允许的环境变量
+    // ========== 环境变量安全配置 ==========
+    // 防止敏感信息泄露
+    pub allowed_env_vars: Vec<String>, // 允许访问的环境变量白名单，默认只包含基本变量
 
-    // 系统调用过滤
-    pub blocked_syscalls: Vec<String>, // 禁止的系统调用
+    // ========== 系统调用安全配置 ==========
+    // 拦截危险的系统级操作
+    pub blocked_syscalls: Vec<String>, // 明确禁止的系统调用列表，如fork、exec等
 }
 
 /// 初始化沙箱
@@ -230,10 +278,12 @@ pub struct SyscallProxy {
     audit_log: AuditLogger,
 }
 
-/// 拦截文件系统调用
+/// 拦截和代理所有文件系统调用 - 这是WASI沙箱安全的核心机制之一
+/// WebAssembly模块发起的文件操作都会被这个函数拦截，进行安全检查后再执行
 impl SyscallProxy {
     pub fn handle_file_open(&self, path: &Path, flags: i32, mode: i32) -> Result<FileHandle, SyscallError> {
-        // 1. 路径安全检查
+        // 1. 路径遍历攻击防护 - 检查文件路径是否在预定义的白名单目录内
+        // 防止通过../../../等相对路径逃逸沙箱，访问宿主系统的敏感文件
         if !self.is_path_allowed(path) {
             self.audit_log.log_security_event(SecurityEvent::PathAccessDenied {
                 path: path.to_path_buf(),
@@ -242,7 +292,8 @@ impl SyscallProxy {
             return Err(SyscallError::AccessDenied);
         }
 
-        // 2. 操作权限检查
+        // 2. 操作权限验证 - 根据文件路径和操作类型检查是否允许该操作
+        // 例如：临时目录允许读写，系统目录只允许读取，敏感目录完全禁止访问
         if !self.is_operation_allowed(path, flags) {
             self.audit_log.log_security_event(SecurityEvent::OperationDenied {
                 path: path.to_path_buf(),
@@ -252,7 +303,8 @@ impl SyscallProxy {
             return Err(SyscallError::AccessDenied);
         }
 
-        // 3. 安全打开文件
+        // 3. 安全文件打开 - 通过Rust标准库安全地打开文件，并包装成安全的句柄
+        // 使用OpenOptions确保操作符合预期，失败时记录审计日志用于安全分析
         match std::fs::OpenOptions::from_flags(flags)
             .mode(mode)
             .open(path) {

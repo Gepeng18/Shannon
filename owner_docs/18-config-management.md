@@ -23,6 +23,12 @@
 
 最后，**罪魁祸首竟然是一个配置文件中的数字**：
 
+**这块代码展示了什么？**
+
+这段代码展示了从"一行配置"到"系统崩溃"的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
 ```yaml
 # config/workflow.yaml - 致命的配置
 workflow:
@@ -46,7 +52,25 @@ workflow:
 
 Shannon的配置管理系统基于一个激进的理念：**配置应该像代码一样可编程、像数据一样可热载**。
 
-```go
+`**这块代码展示了什么？**
+
+这段代码展示了从"一行配置"到"系统崩溃"的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
+**这块代码展示了什么？**
+
+这段代码展示了从"一行配置"到"系统崩溃"的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
+**这块代码展示了什么？**
+
+这段代码展示了从"一行配置"到"系统崩溃"的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
+``go
 // 配置的进化史
 enum ConfigEvolution {
     // 石器时代：硬编码
@@ -92,41 +116,59 @@ Shannon的配置管理器基于**事件驱动架构**，实现毫秒级配置热
 ```go
 // go/orchestrator/internal/config/manager.go
 
-/// 配置管理器 - 热重载配置的核心引擎
+/// ConfigManager Shannon配置管理系统的核心控制器 - 实现热重载、类型安全和环境隔离
+/// 设计理念：配置即代码，将配置从静态文件转变为动态可管理的"活配置"
+/// 核心能力：毫秒级热重载、编译时类型安全、运行时验证、多环境隔离
+///
+/// 架构优势：
+/// - 热重载：配置文件变更后自动生效，无需重启服务
+/// - 类型安全：Go结构体保证配置字段类型正确，YAML解析时自动验证
+/// - 环境隔离：dev/test/staging/prod环境配置完全独立
+/// - 高性能：多级缓存和异步处理，支持高并发配置访问
+/// - 可观测性：完整监控配置变更过程，支持故障排查
 type ConfigManager struct {
-    // 配置存储层 - 支持多格式、多来源
-    configSources map[string]ConfigSource
+    // ========== 配置存储层 - 多源配置聚合 ==========
+    // 支持多种配置来源：文件(YAML/JSON)、环境变量、远程配置服务
+    configSources map[string]ConfigSource  // 配置源映射：source名称 -> ConfigSource实例
 
-    // 事件驱动层 - 异步事件处理
-    eventBus *EventBus
-    eventQueue chan ConfigEvent
-    eventWorkers []*EventWorker
+    // ========== 事件驱动层 - 异步配置变更处理 ==========
+    // 采用生产者-消费者模式处理配置变更，保证高性能和可靠性
+    eventBus *EventBus                     // 全局事件总线，广播配置变更事件
+    eventQueue chan ConfigEvent            // 配置事件队列，缓冲大小1024，防止事件丢失
+    eventWorkers []*EventWorker            // 事件处理工作池，数量等于CPU核心数
 
-    // 文件监听层 - 实时文件变更检测
-    fileWatcher *FileWatcher
-    fileWatchers map[string]*FileWatcher // 按目录分组
+    // ========== 文件监听层 - 实时文件变更检测 ==========
+    // 基于fsnotify实现毫秒级配置热重载，支持多目录监听
+    fileWatcher *FileWatcher               // 全局文件监听器，监控所有配置文件
+    fileWatchers map[string]*FileWatcher   // 按目录分组的文件监听器，支持分层监控策略
 
-    // 缓存层 - 配置缓存和版本管理
-    configCache *ConfigCache
-    configVersions map[string]ConfigVersion
+    // ========== 缓存层 - 高性能配置访问 ==========
+    // 多级缓存策略：内存LRU + 版本控制，减少文件I/O开销
+    configCache *ConfigCache               // LRU缓存，容量1MB，TTL 5分钟
+    configVersions map[string]ConfigVersion // 配置版本管理，支持回滚和审计
 
-    // 验证层 - 类型安全和业务规则验证
-    validator *ConfigValidator
-    validationRules []ValidationRule
+    // ========== 验证层 - 双重配置验证 ==========
+    // 编译时类型检查 + 运行时业务规则验证，确保配置正确性
+    validator *ConfigValidator             // 配置验证器，支持JSON Schema验证
+    validationRules []ValidationRule       // 验证规则列表：类型、范围、依赖关系检查
 
-    // 环境隔离层 - 多环境配置管理
-    environmentManager *EnvironmentManager
+    // ========== 环境隔离层 - 多环境配置管理 ==========
+    // 实现dev/test/staging/prod环境的完全隔离和切换
+    environmentManager *EnvironmentManager // 环境管理器，处理环境变量覆盖
 
-    // 并发控制层 - 线程安全和死锁预防
-    mutexManager *MutexManager
+    // ========== 并发控制层 - 线程安全保证 ==========
+    // 细粒度锁管理，读写分离，避免死锁，支持高并发访问
+    mutexManager *MutexManager             // 互斥锁管理器，使用读写锁优化性能
 
-    // 可观测性层 - 配置变更监控和审计
-    metrics *ConfigMetrics
-    auditLogger *AuditLogger
+    // ========== 可观测性层 - 配置变更监控 ==========
+    // 完整的监控体系：指标收集、审计日志、性能追踪
+    metrics *ConfigMetrics                 // Prometheus指标：变更频率、验证失败率、加载延迟
+    auditLogger *AuditLogger               // 审计日志，记录所有配置变更操作
 
-    // 生命周期管理
-    lifecycleManager *LifecycleManager
-    shutdownSignal chan struct{}
+    // ========== 生命周期管理 - 优雅启动关闭 ==========
+    // 确保配置系统的可靠启动和优雅关闭
+    lifecycleManager *LifecycleManager     // 生命周期管理器，处理启动顺序和依赖
+    shutdownSignal chan struct{}           // 关闭信号通道，协调所有goroutine停止
 }
 
 /// 配置源接口 - 支持多种配置来源
@@ -1450,6 +1492,9 @@ const (
 
 ```go
 // NewConfigManager：配置管理器构造函数
+/// NewConfigManager 配置管理器构造函数 - 在系统启动时被调用
+/// 调用时机：应用程序初始化阶段，由main函数或依赖注入容器调用，创建全局配置管理实例
+/// 实现策略：多源配置加载 + 文件监听初始化 + 缓存预热，确保配置系统的高可用性和热重载能力
 func NewConfigManager(configDir string, opts ConfigOptions) (*ConfigManager, error) {
     // 1. 验证配置目录
     if err := validateConfigDir(configDir); err != nil {

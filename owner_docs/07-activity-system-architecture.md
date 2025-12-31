@@ -8,6 +8,12 @@
 
 在Shannon早期，我们有一个叫`processUserRequest`的巨石函数：
 
+**这块代码展示了什么？**
+
+这段代码演示了早期Shannon系统的巨石函数问题，将认证、限流、AI推理、工具调用等所有逻辑耦合在一个函数中。背景是：传统的单体架构将所有业务逻辑塞进一个函数，导致代码难以维护、测试困难、故障难以隔离，是典型的反模式设计。
+
+这段代码的目的是说明为什么需要活动系统来拆分和重组这些复杂的业务逻辑。
+
 ```go
 // 噩梦般的巨石函数 - 早期Shannon的耻辱
 func processUserRequest(ctx context.Context, userID string, query string) (*Response, error) {
@@ -142,40 +148,48 @@ func processUserRequest(ctx context.Context, userID string, query string) (*Resp
 ```go
 // go/orchestrator/internal/activities/types.go
 
-/// 活动定义 - 标准化的执行契约
+**这块代码展示了什么？**
+
+这段代码定义了ActivityDefinition结构体，是Shannon活动系统的核心数据结构。背景是：活动系统需要标准化地管理各种类型的执行单元，包括AI推理、工具调用、数据处理等，这个结构体提供了统一的配置和行为规范。
+
+这段代码的目的是说明如何通过结构化定义实现活动的标准化管理和治理。
+
+```go
+/// ActivityDefinition - Shannon活动系统的核心定义结构，标准化了所有活动的配置和行为
+/// 这个结构体定义了活动从注册到执行的完整生命周期规范，确保所有活动都遵循相同的接口和治理规则
 type ActivityDefinition struct {
-    // 基本信息
-    Name        string                 `json:"name"`        // 活动唯一标识
-    Description string                 `json:"description"` // 活动描述
-    Version     string                 `json:"version"`     // 活动版本
-    Category    string                 `json:"category"`    // 分类：auth, ai, tool, etc.
+    // ========== 基本信息 - 活动的身份标识 ==========
+    Name        string                 `json:"name"`        // 全局唯一标识，如"ai.intent_classification"、"tool.web_search"
+    Description string                 `json:"description"` // 人类可读的描述，用于文档和调试
+    Version     string                 `json:"version"`     // 语义化版本号，如"v1.2.3"，支持版本兼容性检查
+    Category    string                 `json:"category"`    // 功能分类：auth(认证), ai(人工智能), tool(工具), cache(缓存), metrics(监控)
 
-    // 执行配置
-    Handler     ActivityHandler        `json:"-"`           // 执行处理器
-    Timeout     time.Duration         `json:"timeout"`     // 执行超时
-    MaxRetries  int                   `json:"max_retries"` // 最大重试次数
+    // ========== 执行配置 - 运行时行为控制 ==========
+    Handler     ActivityHandler        `json:"-"`           // 执行处理器接口，不序列化，运行时注入
+    Timeout     time.Duration         `json:"timeout"`     // 单个活动执行超时，默认30秒，防止无限等待
+    MaxRetries  int                   `json:"max_retries"` // 失败时的最大重试次数，默认3次
 
-    // 资源需求
-    ResourceRequirements ResourceRequirements `json:"resource_requirements"`
+    // ========== 资源需求 - 系统资源分配 ==========
+    ResourceRequirements ResourceRequirements `json:"resource_requirements"` // CPU、内存、GPU等资源规格声明
 
-    // 权限要求
-    RequiredPermissions []string      `json:"required_permissions"`
+    // ========== 权限要求 - 安全访问控制 ==========
+    RequiredPermissions []string      `json:"required_permissions"` // 所需权限列表，如["ai.execute", "tool.web_access"]
 
-    // 输入输出规格
-    InputSchema  JSONSchema          `json:"input_schema"`  // 输入数据结构
-    OutputSchema JSONSchema          `json:"output_schema"` // 输出数据结构
+    // ========== 输入输出规格 - 数据契约定义 ==========
+    InputSchema  JSONSchema          `json:"input_schema"`  // 输入数据结构的JSON Schema验证器
+    OutputSchema JSONSchema          `json:"output_schema"` // 输出数据结构的JSON Schema验证器
 
-    // 可观测性配置
-    MetricsEnabled bool              `json:"metrics_enabled"`
-    TracingEnabled bool              `json:"tracing_enabled"`
+    // ========== 可观测性配置 - 监控和追踪 ==========
+    MetricsEnabled bool              `json:"metrics_enabled"` // 是否启用Prometheus指标收集，默认true
+    TracingEnabled bool              `json:"tracing_enabled"` // 是否启用OpenTelemetry分布式追踪，默认true
 
-    // 错误处理策略
-    RetryPolicy  RetryPolicy         `json:"retry_policy"`
-    CircuitBreaker CircuitBreakerConfig `json:"circuit_breaker"`
+    // ========== 错误处理策略 - 故障恢复机制 ==========
+    RetryPolicy  RetryPolicy         `json:"retry_policy"`   // 指数退避重试策略配置
+    CircuitBreaker CircuitBreakerConfig `json:"circuit_breaker"` // 熔断器配置，防止级联故障
 
-    // 元数据
-    Tags         map[string]string    `json:"tags"`         // 标签，用于过滤和分组
-    Metadata     map[string]interface{} `json:"metadata"`   // 扩展元数据
+    // ========== 元数据 - 扩展属性支持 ==========
+    Tags         map[string]string    `json:"tags"`         // 标签键值对，用于活动过滤和分组，如{"env": "prod", "team": "ai"}
+    Metadata     map[string]interface{} `json:"metadata"`   // 任意扩展元数据，如作者信息、文档链接等
 }
 
 /// 活动处理器接口 - 执行契约
@@ -224,6 +238,12 @@ type RetryPolicy struct {
 ### 活动注册表：运行时的插件系统
 
 活动不是编译时固定的，而是运行时可注册的插件：
+
+**这块代码展示了什么？**
+
+这段代码展示了活动注册表的设计，支持运行时动态注册和管理活动。背景是：现代系统需要支持插件化扩展，活动注册表提供了分类索引、版本管理和标签系统，使得活动可以像插件一样动态加载和管理。
+
+这段代码的目的是说明如何构建支持热插拔的活动插件系统。
 
 ```go
 // 活动注册表 - 运行时插件系统
@@ -682,6 +702,12 @@ func (a *AIInferenceActivity) Execute(ctx context.Context, input interface{}) (i
 
 ### 工具执行活动：能力的扩展
 
+**这块代码展示了什么？**
+
+这段代码展示了工具执行活动的实现，支持在安全沙箱中执行外部工具。背景是：AI代理需要调用各种工具（如网页搜索、数据库查询等），但工具执行存在安全风险，这个活动提供了标准化的工具调用和安全隔离机制。
+
+这段代码的目的是说明如何在活动系统中安全地集成和执行外部工具。
+
 ```go
 // 工具执行活动实现
 type ToolExecutionActivity struct {
@@ -858,6 +884,12 @@ func (amc *ActivityMetricsCollector) RecordExecution(activityName, category stri
 ```
 
 ### 活动系统的故障排查
+
+**这块代码展示了什么？**
+
+这段代码展示了活动故障排查器的实现，自动分析活动失败的原因并提供修复建议。背景是：分布式系统中的故障排查很复杂，需要综合分析日志、指标、追踪数据等，这个排查器提供了智能的根本原因分析和自动化修复建议。
+
+这段代码的目的是说明如何构建智能的故障排查系统，提高系统的运维效率。
 
 ```go
 // 活动故障排查器
@@ -1126,6 +1158,12 @@ type ActivityMetadata struct {
 
 #### 活动执行引擎的实现
 
+**这块代码展示了什么？**
+
+这段代码展示了活动执行引擎的核心实现，负责活动的调度、执行、监控和错误处理。背景是：活动系统需要可靠地执行各种类型的活动，包括预检、资源分配、重试机制等，这个引擎提供了完整的执行生命周期管理。
+
+这段代码的目的是说明如何构建一个高可靠的活动执行引擎，支持复杂的执行逻辑和错误恢复。
+
 ```go
 // go/orchestrator/internal/activities/execution_engine.go
 
@@ -1136,6 +1174,13 @@ type ExecutionEngine struct {
     logger  *zap.Logger
 }
 
+**这块代码展示了什么？**
+
+这段代码展示了活动执行引擎的主入口函数，实现了完整的活动执行生命周期。背景是：活动执行需要经过多个阶段（验证、权限检查、资源分配、执行、重试等），这个函数提供了标准化的执行流程，确保所有活动都遵循相同的治理规则。
+
+这段代码的目的是说明如何构建一个健壮的活动执行引擎，支持复杂的业务逻辑和错误处理。
+
+```go
 /// 执行活动的主入口
 func (ee *ExecutionEngine) ExecuteActivity(
     ctx context.Context,

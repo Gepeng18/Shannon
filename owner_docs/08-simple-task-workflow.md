@@ -16,6 +16,12 @@
 
 但在我们的系统中，这个问题触发了惊人的复杂流程：
 
+**这块代码展示了什么？**
+
+这段代码演示了简单查询被过度复杂化的"官僚主义"问题，将一个简单的数学运算变成了涉及身份验证、会话管理、预算检查、工作流编排等多个复杂步骤。背景是：系统设计时往往追求完整性和健壮性，但这可能导致简单任务的性能下降和用户体验变差。
+
+这段代码的目的是说明为什么需要为简单任务设计特殊的优化路径，避免过度复杂化。
+
 ```python
 # 简单查询的"官僚主义"流程
 def process_simple_query(query: str, user_id: str):
@@ -69,6 +75,12 @@ def process_simple_query(query: str, user_id: str):
 我们终于意识到：**系统的效率不在于完美处理所有场景，而在于智能地区分场景，为每个场景选择最合适的处理方式**。
 
 Shannon的简单任务工作流基于一个激进的理念：**对于确定能快速完成的任务，直接处理，不要编排**。
+
+**这块代码展示了什么？**
+
+这段代码展示了简单任务的"直达快车道"处理方式，直接执行而不经过复杂的Temporal工作流编排。背景是：对于确定性强、执行快的任务，工作流编排的开销可能超过任务本身的执行时间，这种直接处理的方式提供了更好的性能。
+
+这段代码的目的是说明如何通过智能路由实现简单任务的快速处理。
 
 ```go
 // 简单任务的"直达快车道"
@@ -146,22 +158,28 @@ func (sws *SmartWorkflowSelector) SelectOptimalWorkflow(
     input *TaskInput,
 ) (*WorkflowDecision, error) {
 
-    // 1. 多维度特征提取
+    // 1. 多维度特征提取 - 从任务输入中提取文本、上下文、工具等特征向量
+    // 包括查询长度、复杂度指标、工具依赖关系、用户历史行为等，用于后续分析
     features := sws.extractFeatures(input)
 
-    // 2. 复杂度评估（文本+语义+工具）
+    // 2. 复杂度评估 - 综合分析任务复杂度（文本复杂度+语义复杂度+工具复杂度）
+    // 文本复杂度：语言难度、领域专业性；语义复杂度：推理深度、多步骤逻辑；工具复杂度：工具链长度和依赖关系
     complexity := sws.complexityAnalyzer.Analyze(ctx, input)
 
-    // 3. 性能预测（时间+资源+并发）
+    // 3. 性能预测 - 基于历史数据和当前特征预测执行时间、资源消耗、并发影响
+    // 使用机器学习模型预测P95延迟、CPU/内存使用率、潜在的队列等待时间
     performance := sws.performancePredictor.Predict(ctx, features, complexity)
 
-    // 4. 成本估算（token+API调用+存储）
+    // 4. 成本估算 - 计算任务执行的总成本（token消耗+API调用费用+存储成本）
+    // 考虑不同模型的定价策略、缓存命中率、批量处理折扣等因素
     cost := sws.costEstimator.Estimate(ctx, features, complexity)
 
-    // 5. 用户画像分析（历史行为+偏好+限制）
+    // 5. 用户画像分析 - 获取用户的行为模式、偏好设置、资源限制和历史性能
+    // 包括成功率、平均响应时间、偏好的工具类型、预算限制等个性化特征
     profile := sws.userProfiler.GetProfile(ctx, input.UserID)
 
-    // 6. 决策矩阵计算
+    // 6. 多维度决策计算 - 输入所有分析结果到决策引擎，计算最优工作流类型
+    // 决策引擎会权衡：性能vs成本vs可靠性vs用户体验等多维度因素
     decision := sws.decisionEngine.MakeDecision(ctx, DecisionInput{
         Features: features,
         Complexity: complexity,
@@ -172,7 +190,8 @@ func (sws *SmartWorkflowSelector) SelectOptimalWorkflow(
         TimeConstraints: input.TimeoutSeconds,
     })
 
-    // 7. 决策验证和回退
+    // 7. 决策验证和故障回退 - 验证决策的合理性，必要时回退到保守策略
+    // 验证包括：资源可用性检查、SLA承诺验证、系统容量评估；失败时自动选择简单可靠的工作流
     if err := sws.validateDecision(decision, input); err != nil {
         decision = sws.getFallbackDecision(input, err)
     }
@@ -180,7 +199,16 @@ func (sws *SmartWorkflowSelector) SelectOptimalWorkflow(
     return decision, nil
 }
 
-/// 特征提取的深度分析
+**这块代码展示了什么？**
+
+这段代码展示了智能工作流选择器的特征提取逻辑，从任务输入中提取多维度特征用于决策。背景是：要智能地区分简单任务和复杂任务，需要从查询文本、上下文、工具需求、约束条件等多个维度提取特征，这个特征向量为后续的决策模型提供输入。
+
+这段代码的目的是说明如何通过特征工程实现任务复杂度的智能评估。
+
+```go
+/// extractFeatures 特征提取核心逻辑 - 在任务路由决策流程中被同步调用
+/// 调用时机：每次用户任务提交后，在SelectOptimalWorkflow方法内部调用，用于生成决策所需的特征向量
+/// 实现策略：纯函数式处理，无副作用；支持并行特征计算；使用缓存优化重复计算；特征标准化便于模型输入
 func (sws *SmartWorkflowSelector) extractFeatures(input *TaskInput) *TaskFeatures {
     return &TaskFeatures{
         // 文本特征

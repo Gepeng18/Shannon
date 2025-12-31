@@ -8,6 +8,12 @@
 
 2019年，一个创业团队部署了他们的第一个AI客服机器人。最初的预算规划是这样的：
 
+**这块代码展示了什么？**
+
+这段代码演示了创业公司最初的预算规划逻辑，看似合理的计算却忽略了AI系统的复杂性和不可预测性。背景是：AI成本不像传统软件那样可预测，用户行为、模型选择、并发峰值等因素都会导致成本急剧变化，简单的数学模型无法应对这些变量。
+
+这段代码的目的是说明为什么传统的预算规划方法在AI系统中失效。
+
 ```python
 # 看似合理的预算规划
 class BudgetPlanning:
@@ -69,6 +75,12 @@ def emergency_response():
 
 我们花了6个月时间，从失败中总结教训，最终形成了**预算即架构**的设计哲学：
 
+**这块代码展示了什么？**
+
+这段代码体现了"预算即架构"的核心理念，将预算检查嵌入到系统架构的每个层面。背景是：AI系统的成本控制不能事后处理，而要在架构设计阶段就考虑成本因素，这种设计确保了成本控制的主动性和有效性。
+
+这段代码的目的是说明如何将预算控制融入系统架构的设计原则。
+
 ```go
 // 预算即架构的核心理念
 type BudgetFirstArchitecture struct {
@@ -104,48 +116,73 @@ type BudgetFirstArchitecture struct {
 传统方法：等执行完了再计费
 Shannon方法：预估成本再执行
 
+**这块代码展示了什么？**
+
+这段代码展示了智能预算分配器的核心实现，通过多维度分析（历史数据、系统负载、用户行为）来动态分配预算。背景是：传统的固定预算无法适应AI系统的复杂性和动态性，智能分配器能够根据实时情况调整预算，确保资源的高效利用。
+
+这段代码的目的是说明如何通过智能算法实现动态预算分配，避免资源浪费和成本超支。
+
 ```go
 // 智能预算分配器的核心逻辑
+/// IntelligentBudgetAllocator 智能预算分配器 - Shannon预算管理系统的核心引擎
+/// 设计理念：将预算分配从静态配额转变为动态智能决策
+/// 核心能力：多维度成本预测、实时负载感知、用户行为分析、动态预算调整
+///
+/// 预测算法：
+/// - 历史数据分析：基于用户过去的使用模式预测未来成本
+/// - 实时负载感知：根据当前系统负载动态调整预算倍数
+/// - 用户行为建模：考虑用户的使用习惯和付费意愿
+/// - ML预测模型：使用机器学习模型进行更精确的成本预测
 type IntelligentBudgetAllocator struct {
-    // 历史数据分析器
-    usageHistory *UsageHistoryAnalyzer
+    // ========== 数据驱动层 ==========
+    // 基于历史数据进行成本预测和基准计算
+    usageHistory *UsageHistoryAnalyzer  // 历史使用数据分析器
+    userProfiler *UserBehaviorProfiler  // 用户行为画像分析器
 
-    // 实时负载监控器
-    loadMonitor *LoadMonitor
+    // ========== 实时感知层 ==========
+    // 监控当前系统状态，动态调整预算决策
+    loadMonitor *LoadMonitor            // 系统负载实时监控器
 
-    // 机器学习预测器
-    costPredictor *MLCostPredictor
-
-    // 用户画像分析器
-    userProfiler *UserBehaviorProfiler
+    // ========== 智能预测层 ==========
+    // 使用机器学习进行更精确的成本预测
+    costPredictor *MLCostPredictor      // 机器学习成本预测器
 }
 
+/// AllocateBudget 预算分配核心方法 - 在任务执行前被同步调用
+/// 调用时机：用户任务通过安全检查后，在任务路由决策阶段调用，为任务分配执行预算
+/// 实现策略：多因子预测 + 动态调整 + 安全边际，确保预算既不浪费又能覆盖实际成本
 func (a *IntelligentBudgetAllocator) AllocateBudget(request *TaskRequest) (*BudgetAllocation, error) {
-    // 1. 基于历史数据的基准估算
+    // 1. 基于历史数据的基准估算 - 从用户过去30天使用记录计算P95成本，避免异常值影响
+    // 查询Redis中存储的历史使用数据，按任务类型过滤，取第95百分位数作为基准
     baseCost := a.estimateFromHistory(request.UserID, request.TaskType)
 
-    // 2. 考虑当前系统负载
+    // 2. 考虑当前系统负载 - 根据当前CPU/内存使用率调整预算倍数，高负载时增加缓冲
+    // 从Prometheus指标获取实时负载数据，负载<30%时倍数1.0，30%-70%时1.2，>70%时1.5
     loadMultiplier := a.calculateLoadMultiplier()
 
-    // 3. 分析用户行为模式
+    // 3. 分析用户行为模式 - 基于用户画像调整预算：高频用户保守分配，付费用户增加预算，异常用户减少预算
+    // 从用户行为分析引擎获取用户画像数据，包括使用频率、订阅等级、异常检测结果
     behaviorMultiplier := a.analyzeUserBehavior(request.UserID)
 
-    // 4. 应用机器学习预测（如果可用）
+    // 4. 应用机器学习预测（如果可用）- 使用训练好的模型预测具体任务的成本
+    // 输入特征包括任务类型、用户历史、系统负载，输出预测成本和置信度
     mlPrediction := a.predictWithML(request)
 
-    // 5. 综合计算最终预算
+    // 5. 综合计算最终预算 - 加权组合所有估算因子，确保预测准确性和保守性
+    // 使用统计模型结合多个因子，避免单一因子导致的预测偏差
     finalBudget := a.combineEstimates(baseCost, loadMultiplier, behaviorMultiplier, mlPrediction)
 
-    // 6. 应用安全边际
+    // 6. 应用安全边际 - 在预测基础上增加20-50%的缓冲，防止突发成本超支
+    // 安全边际根据用户历史稳定性和系统负载动态调整
     safeBudget := a.applySafetyMargin(finalBudget)
 
     return &BudgetAllocation{
         UserID: request.UserID,
         TaskID: request.TaskID,
-        AllocatedBudget: safeBudget,
-        EstimatedCost: finalBudget,
-        Confidence: a.calculateConfidence(baseCost, mlPrediction),
-        ExpiresAt: time.Now().Add(30 * time.Minute), // 30分钟过期
+        AllocatedBudget: safeBudget,        // 实际分配的预算额度（含安全边际）
+        EstimatedCost: finalBudget,         // 预测的基础成本
+        Confidence: a.calculateConfidence(baseCost, mlPrediction), // 预测置信度(0.0-1.0)
+        ExpiresAt: time.Now().Add(30 * time.Minute), // 30分钟过期，防止预算浪费
     }, nil
 }
 ```

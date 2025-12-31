@@ -10,6 +10,12 @@
 
 **第一宗罪：消息队列的假异步**
 
+**这块代码展示了什么？**
+
+这段代码演示了基于消息队列的工作流实现，看似异步实则复杂的状态管理问题。背景是：传统消息队列方案虽然提供了解耦，但带来了状态一致性、错误处理、流程编排等一系列复杂问题，在实际生产环境中难以维护。
+
+这段代码的目的是说明为什么简单的消息队列方案无法满足复杂工作流的需求。
+
 ```python
 # 看似优雅的消息队列方案
 class MessageQueueWorkflow:
@@ -147,10 +153,26 @@ class CronBasedWorkflow:
 
 Temporal的出现让我们看到了曙光。它不是另一个工作流框架，而是**重新定义了工作流应该是什么样子**：
 
+**这块代码展示了什么？**
+
+这段代码展示了Temporal的工作流即代码理念，通过Go函数定义完整的工作流逻辑。背景是：传统工作流引擎使用DSL或配置定义流程，而Temporal允许开发者用熟悉的编程语言编写工作流，这种方式更直观、更易调试，也更符合软件工程的最佳实践。
+
+这段代码的目的是说明Temporal如何通过代码定义复杂的业务流程。
+
 ```go
 // Temporal的方式：工作流即代码
+/// AppleAIStrategyAnalysis 苹果AI战略分析工作流 - 完整的Temporal工作流示例
+/// 调用时机：当用户需要深入分析苹果公司的AI战略时，由工作流调度器启动
+/// 实现策略：多阶段流水线（数据收集→并发分析→综合评估），展示Temporal并发执行、错误处理和状态管理能力
+///
+/// 工作流特点：
+/// - 并发执行：竞争对手分析可并行进行，大幅提升性能
+/// - 错误处理：任何一个活动失败都会导致工作流失败，但可配置重试策略
+/// - 状态持久化：工作流状态自动保存，支持中断后恢复
+/// - 可观测性：完整的执行追踪和性能指标收集
 func AppleAIStrategyAnalysis(ctx workflow.Context, input AnalysisInput) (AnalysisResult, error) {
-    // 步骤1：搜索苹果AI战略
+    // 步骤1：执行目标公司数据搜索活动 - 调用SearchCompanyData活动获取苹果公司的AI战略相关数据
+    // SearchCompanyData活动会：从多个数据源（新闻、报告、财务数据等）检索信息，使用语义搜索和关键词匹配
     appleData, err := workflow.ExecuteActivity(ctx, SearchCompanyData, SearchInput{
         Company: "Apple",
         Topic: "AI Strategy",
@@ -159,7 +181,8 @@ func AppleAIStrategyAnalysis(ctx workflow.Context, input AnalysisInput) (Analysi
         return AnalysisResult{}, err
     }
 
-    // 步骤2：并行搜索竞争对手
+    // 步骤2：并发执行竞争对手数据搜索 - 同时启动多个SearchCompanyData活动，提高整体响应速度
+    // Temporal的并发执行：每个活动可独立调度到不同worker，避免串行等待；失败时可单独重试，不影响其他活动
     competitors := []string{"Google", "Microsoft", "Amazon"}
     competitorFutures := make([]workflow.Future, len(competitors))
 
@@ -170,7 +193,8 @@ func AppleAIStrategyAnalysis(ctx workflow.Context, input AnalysisInput) (Analysi
         })
     }
 
-    // 等待所有竞争对手数据
+    // 步骤3：等待所有并行活动的完成 - 使用workflow.Future协调并发执行结果
+    // Future模式：非阻塞提交，同步等待结果；任何一个活动失败都会导致整个步骤失败，支持部分失败处理
     competitorData := make([]CompanyData, len(competitors))
     for i, future := range competitorFutures {
         err := future.Get(ctx, &competitorData[i])
@@ -179,7 +203,8 @@ func AppleAIStrategyAnalysis(ctx workflow.Context, input AnalysisInput) (Analysi
         }
     }
 
-    // 步骤3：综合分析
+    // 步骤4：执行综合分析活动 - 调用ComprehensiveAnalysis活动整合所有收集的数据
+    // 综合分析包括：对比分析、趋势识别、投资策略评估、竞争格局判断等，需要大量计算和推理
     analysis, err := workflow.ExecuteActivity(ctx, ComprehensiveAnalysis, AnalysisInput{
         TargetCompany: appleData,
         Competitors: competitorData,
@@ -380,6 +405,12 @@ func AdvancedWorkflow(ctx workflow.Context, input ComplexInput) (ComplexResult, 
 ### 多租户架构下的工作流隔离
 
 Shannon作为多租户系统，对工作流隔离有严格要求：
+
+**这块代码展示了什么？**
+
+这段代码展示了多租户工作流注册表的实现，按租户组织和管理工作流定义。背景是：多租户系统中，不同租户的工作流需要完全隔离，同时要支持租户特定的配置和资源限制，这种设计确保了租户间的安全隔离和资源公平性。
+
+这段代码的目的是说明如何在Temporal基础上实现多租户工作流隔离。
 
 ```go
 // 多租户工作流注册表
@@ -590,6 +621,12 @@ Shannon的Temporal集成不仅仅是简单的API调用，而是一个完整的**
 
 ##### 工作流即代码的设计哲学
 
+**这块代码展示了什么？**
+
+这段代码定义了工作流的核心接口，体现了"工作流即代码"的设计哲学。背景是：Temporal允许开发者用编程语言定义工作流，这种方式比传统的DSL或配置更直观、更易于测试和维护，同时保持了分布式执行的可靠性。
+
+这段代码的目的是说明如何通过接口契约设计可复用的工作流组件。
+
 ```go
 // go/orchestrator/internal/workflows/types.go
 
@@ -781,6 +818,12 @@ type ActivityRegistry struct {
 
 #### 工作流生命周期的深度追踪
 
+**这块代码展示了什么？**
+
+这段代码展示了工作流生命周期追踪器的实现，用于监控工作流的完整执行过程。背景是：复杂的工作流执行需要全面的可观测性，包括性能监控、错误追踪、状态变更等信息，这种追踪器提供了工作流执行的完整审计和调试能力。
+
+这段代码的目的是说明如何实现分布式工作流的全面监控和追踪。
+
 ```go
 // go/orchestrator/internal/workflows/lifecycle/tracker.go
 
@@ -806,20 +849,24 @@ type LifecycleEvent struct {
     Error      error                  `json:"error,omitempty"`
 }
 
-/// 追踪完整生命周期
+/// TrackFullLifecycle 工作流生命周期追踪器 - 在Temporal工作流执行期间被自动调用
+/// 调用时机：每次Temporal工作流启动时，由工作流执行引擎自动注入，用于监控整个工作流从开始到结束的完整生命周期
+/// 实现策略：通过包装原始工作流函数，在关键节点插入事件记录，不影响业务逻辑的原子性和正确性
 func (t *WorkflowLifecycleTracker) TrackFullLifecycle(
     ctx workflow.Context,
     input interface{},
     workflowFn func(workflow.Context, interface{}) (interface{}, error),
 ) (interface{}, error) {
 
-    // 阶段1: 初始化
+    // 阶段1: 工作流初始化 - 记录工作流启动事件，捕获输入类型和初始时间戳
+    // recordEvent是线程安全的，使用读写锁保护events切片，支持并发访问
     t.recordEvent("initialized", map[string]interface{}{
         "input_type": fmt.Sprintf("%T", input),
         "start_time": t.startTime,
     })
 
-    // 阶段2: 验证输入
+    // 阶段2: 输入验证 - 在工作流执行前验证输入参数的合法性
+    // 验证包括：参数类型检查、业务规则验证、资源可用性检查；失败时立即终止，避免无效执行
     if err := t.validateInput(input); err != nil {
         t.recordEvent("validation_failed", map[string]interface{}{
             "error": err.Error(),
@@ -827,7 +874,8 @@ func (t *WorkflowLifecycleTracker) TrackFullLifecycle(
         return nil, err
     }
 
-    // 阶段3: 准备执行环境
+    // 阶段3: 执行环境准备 - 设置工作流执行所需的上下文和资源
+    // 包括：创建执行上下文、初始化监控指标、准备缓存和连接池等
     execCtx, err := t.prepareExecutionContext(ctx)
     if err != nil {
         t.recordEvent("context_preparation_failed", map[string]interface{}{
@@ -836,13 +884,16 @@ func (t *WorkflowLifecycleTracker) TrackFullLifecycle(
         return nil, err
     }
 
-    // 阶段4: 执行工作流
+    // 阶段4: 工作流执行开始 - 记录实际业务逻辑执行的启动
+    // execution_context包含执行环境的关键信息，用于调试和性能分析
     t.recordEvent("execution_started", map[string]interface{}{
         "execution_context": fmt.Sprintf("%+v", execCtx),
     })
 
+    // 执行核心业务逻辑 - 调用被包装的工作流函数，这是实际的业务处理
     result, err := workflowFn(execCtx, input)
     if err != nil {
+        // 执行失败时记录详细错误信息和执行时长，便于问题排查和性能监控
         t.recordEvent("execution_failed", map[string]interface{}{
             "error": err.Error(),
             "duration_ms": time.Since(t.startTime).Milliseconds(),
@@ -850,7 +901,8 @@ func (t *WorkflowLifecycleTracker) TrackFullLifecycle(
         return nil, err
     }
 
-    // 阶段5: 验证结果
+    // 阶段5: 结果验证 - 验证工作流执行结果的正确性和完整性
+    // 包括：结果格式检查、业务规则验证、数据一致性检查等
     if err := t.validateResult(result); err != nil {
         t.recordEvent("result_validation_failed", map[string]interface{}{
             "error": err.Error(),
@@ -858,19 +910,22 @@ func (t *WorkflowLifecycleTracker) TrackFullLifecycle(
         return nil, err
     }
 
-    // 阶段6: 清理资源
+    // 阶段6: 资源清理 - 释放工作流执行过程中分配的临时资源
+    // 包括：关闭连接、清理缓存、释放锁等；失败时只记录警告，不影响主要流程
     if err := t.cleanupResources(execCtx); err != nil {
         t.logger.Warn("Resource cleanup failed", zap.Error(err))
     }
 
-    // 阶段7: 完成
+    // 阶段7: 工作流成功完成 - 记录最终结果和总执行时间
+    // 计算从初始化到完成的总时长，用于性能监控和SLA跟踪
     duration := time.Since(t.startTime)
     t.recordEvent("completed", map[string]interface{}{
         "duration_ms": duration.Milliseconds(),
         "result_type": fmt.Sprintf("%T", result),
     })
 
-    // 发出完成事件
+    // 发出工作流完成事件 - 通知外部系统工作流已完成
+    // 事件包含完整的事件历史，支持下游系统的事件驱动处理
     t.eventEmitter.EmitWorkflowCompleted(&WorkflowCompletedEvent{
         WorkflowID: t.workflowID,
         RunID:      t.runID,

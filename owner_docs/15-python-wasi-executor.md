@@ -9,7 +9,25 @@
 Python的创造者Guido van Rossum曾说："Python的哲学是让程序员开心"。但在AI时代，这种"开心"哲学遇到了生存危机：
 
 **AI时代的安全噩梦**：
-```python
+`**这块代码展示了什么？**
+
+这段代码展示了从"生命之水"到"毒药"的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
+**这块代码展示了什么？**
+
+这段代码展示了从"生命之水"到"毒药"的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
+**这块代码展示了什么？**
+
+这段代码展示了从"生命之水"到"毒药"的核心实现。背景是：现代AI系统需要处理复杂的业务逻辑和技术挑战，这个代码示例演示了具体的解决方案和技术实现。
+
+这段代码的目的是说明如何通过编程实现特定的功能需求和技术架构。
+
+``python
 # 用户提交的"数据分析"代码
 import os
 import subprocess
@@ -139,20 +157,25 @@ class CPythonWASMCompiler:
         self.wasi_sdk_path = "/usr/local/wasi-sdk"
 
     def compile_cpython(self) -> bytes:
-        """编译CPython为WASM"""
-        # 1. 配置Emscripten
+        """编译CPython为WASM字节码 - 这是将Python从原生环境移植到沙箱的关键步骤"""
+        # 1. 配置Emscripten编译环境 - 设置WebAssembly编译工具链和优化选项
+        # Emscripten是LLVM到WebAssembly的编译器，支持将C/C++代码编译为WASM
         self.configure_emscripten()
 
-        # 2. 应用WASI补丁
+        # 2. 应用WASI兼容性补丁 - 修改CPython源码以适配WASI系统接口
+        # WASI(WebAssembly System Interface)定义了WASM模块与宿主环境的系统调用约定
         self.apply_wasi_patches()
 
-        # 3. 编译Python解释器
+        # 3. 编译Python解释器核心 - 将CPython的主要C源码编译为WebAssembly对象文件
+        # 包括Python虚拟机、对象系统、内存管理等核心组件的编译
         self.compile_interpreter()
 
-        # 4. 构建标准库
+        # 4. 构建经过安全过滤的标准库 - 只包含安全的Python模块，移除危险的系统访问功能
+        # 例如移除os.system、subprocess等模块，或提供安全版本
         self.build_standard_library()
 
-        # 5. 链接和优化
+        # 5. 最终链接和优化 - 将所有对象文件链接成单个WASM文件，并应用大小和性能优化
+        # 使用wasm-opt等工具减小文件大小，提高加载和执行性能
         wasm_file = self.link_and_optimize()
 
         return wasm_file.read_bytes()
